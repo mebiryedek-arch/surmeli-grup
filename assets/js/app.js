@@ -100,6 +100,7 @@
             if (section === 'accounts' && !permissions.has('accounts.view')) section = 'dashboard';
             if (section === 'cash-bank' && !permissions.has('cash.view')) section = 'dashboard';
             if (section === 'income-expense' && !permissions.has('income_expense.view')) section = 'dashboard';
+            if (section === 'jobs' && !permissions.has('jobs.view')) section = 'dashboard';
             root.querySelectorAll('[data-section-view]').forEach((view) => { view.hidden = view.dataset.sectionView !== section; });
             root.querySelectorAll('.sg-sidebar [data-section]').forEach((link) => link.classList.toggle('is-active', link.dataset.section === section));
             const heading = root.querySelector('.sg-page-heading');
@@ -409,6 +410,111 @@
         loadOptions().then(load).catch(e=>{val('sg-ie-message').textContent=e.message;});
     };
 
+
+    const setupJobsModule = (permissions) => {
+        const $ = (id) => root.querySelector('#' + id);
+        const form = $('sg-job-form');
+        if (!form || !SG_APP.jobsEndpoint || !permissions.has('jobs.view')) return;
+        const labels = {new:'Yeni',assigned:'Atandı',in_progress:'Devam ediyor',on_hold:'Beklemede',completed:'Tamamlandı',cancelled:'İptal'};
+        const priorityLabels = {low:'Düşük',normal:'Normal',high:'Yüksek',urgent:'Acil'};
+        let items = [], people = [], customers = [], activeId = 0;
+        let calendarDate = new Date(); let view = 'list';
+        const field = (id) => $(id);
+        const safeDate = (v) => v ? String(v).slice(0,10) : '';
+        const request = (url, options={}) => apiRequest(url, options);
+        const loadOptions = () => request(SG_APP.jobOptionsEndpoint).then(d => {
+            people=d.personnel||[]; customers=d.customers||[];
+            const p=field('sg-job-person'), c=field('sg-job-customer');
+            p.replaceChildren(new Option('Atama yok','')); c.replaceChildren(new Option('Bağlantı yok',''));
+            people.forEach(x=>p.add(new Option(x.full_name,x.id)));
+            customers.forEach(x=>c.add(new Option(x.company_name,x.id)));
+        });
+        const renderMetrics = () => {
+            const open=items.filter(x=>!['completed','cancelled'].includes(x.status));
+            field('sg-job-open-count').textContent=open.length;
+            field('sg-job-late-count').textContent=open.filter(x=>x.due_date && new Date(x.due_date.replace(' ','T')) < new Date()).length;
+            field('sg-job-progress-count').textContent=items.filter(x=>x.status==='in_progress').length;
+            field('sg-job-done-count').textContent=items.filter(x=>x.status==='completed').length;
+        };
+        const renderList = () => {
+            const body=field('sg-job-rows'); body.replaceChildren();
+            const q=field('sg-job-search').value.trim().toLocaleLowerCase('tr-TR');
+            const status=field('sg-job-status-filter').value;
+            const rows=items.filter(x=>(!status||x.status===status)&&(!q||(x.title+' '+x.job_no).toLocaleLowerCase('tr-TR').includes(q)));
+            if(!rows.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=7;td.className='sg-table-empty';td.textContent='Bu filtrelerle eşleşen görev bulunamadı.';tr.appendChild(td);body.appendChild(tr);return;}
+            rows.forEach(x=>{
+                const tr=document.createElement('tr');
+                const title=document.createElement('td'); const strong=document.createElement('strong');strong.textContent=x.title;const small=document.createElement('small');small.textContent=x.job_no;title.append(strong,small);tr.appendChild(title);
+                [x.company_name||'—',x.assigned_name||'Atanmadı',priorityLabels[x.priority]||x.priority,labels[x.status]||x.status,formatDate(x.due_date)].forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;if(i===3)td.className='sg-job-status sg-job-status-'+x.status;tr.appendChild(td);});
+                const action=document.createElement('td');const btn=document.createElement('button');btn.type='button';btn.className='sg-button sg-button-light sg-button-small';btn.textContent='Aç';btn.addEventListener('click',()=>openJob(x.id));action.appendChild(btn);tr.appendChild(action);body.appendChild(tr);
+            });
+        };
+        const renderCalendar = () => {
+            const grid=field('sg-calendar-grid');grid.replaceChildren();
+            const y=calendarDate.getFullYear(),m=calendarDate.getMonth();
+            field('sg-calendar-title').textContent=new Intl.DateTimeFormat('tr-TR',{month:'long',year:'numeric'}).format(calendarDate);
+            ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].forEach(d=>{const h=document.createElement('div');h.className='sg-calendar-weekday';h.textContent=d;grid.appendChild(h);});
+            const first=new Date(y,m,1);const offset=(first.getDay()+6)%7;const start=new Date(y,m,1-offset);
+            for(let i=0;i<42;i++){
+                const day=new Date(start);day.setDate(start.getDate()+i);
+                const cell=document.createElement('div');cell.className='sg-calendar-day'+(day.getMonth()!==m?' is-muted':'');
+                const num=document.createElement('span');num.className='sg-calendar-day-number';num.textContent=day.getDate();cell.appendChild(num);
+                const key=[day.getFullYear(),String(day.getMonth()+1).padStart(2,'0'),String(day.getDate()).padStart(2,'0')].join('-');
+                items.filter(x=>safeDate(x.due_date)===key).slice(0,3).forEach(x=>{const b=document.createElement('button');b.type='button';b.className='sg-calendar-event sg-calendar-event-'+x.priority;b.textContent=x.title;b.title=x.title;b.addEventListener('click',()=>openJob(x.id));cell.appendChild(b);});
+                grid.appendChild(cell);
+            }
+        };
+        const load = () => request(SG_APP.jobsEndpoint).then(d=>{items=d.items||[];renderMetrics();renderList();renderCalendar();}).catch(e=>{field('sg-job-rows').textContent=e.message;});
+        const resetForm = () => {form.reset();field('sg-job-id').value='';field('sg-job-priority').value='normal';field('sg-job-status').value='new';field('sg-job-message').textContent='';};
+        const setReadOnly = (locked) => {
+            ['sg-job-title','sg-job-start','sg-job-due','sg-job-person','sg-job-customer','sg-job-priority','sg-job-description'].forEach(id=>field(id).disabled=locked);
+            field('sg-job-status').disabled=!permissions.has('jobs.update_status')&&!permissions.has('jobs.assign');
+            form.querySelector('button[type="submit"]').hidden=locked&&!permissions.has('jobs.update_status')&&!permissions.has('jobs.assign');
+        };
+        const openNew = () => {
+            activeId=0;resetForm();field('sg-job-dialog-title').textContent='Yeni Görev';field('sg-job-detail').hidden=true;setReadOnly(!permissions.has('jobs.create'));field('sg-job-dialog').showModal();
+        };
+        const openJob = (id) => {
+            activeId=Number(id);request(SG_APP.jobsEndpoint+'/'+activeId).then(d=>{
+                const x=d.job;resetForm();field('sg-job-dialog-title').textContent=x.job_no+' · '+x.title;
+                field('sg-job-id').value=x.id;field('sg-job-title').value=x.title||'';field('sg-job-description').value=x.description||'';
+                field('sg-job-start').value=safeDate(x.start_date);field('sg-job-due').value=safeDate(x.due_date);
+                field('sg-job-person').value=x.assigned_personnel_id||'';field('sg-job-customer').value=x.party_id||'';
+                field('sg-job-priority').value=x.priority||'normal';field('sg-job-status').value=x.status||'new';
+                setReadOnly(!permissions.has('jobs.assign'));
+                field('sg-job-detail').hidden=false;
+                const notes=field('sg-job-notes');notes.replaceChildren();
+                (d.notes||[]).forEach(n=>{const p=document.createElement('p');p.textContent=(n.display_name||'Kullanıcı')+' · '+formatDate(n.created_at)+' — '+n.note;notes.appendChild(p);});
+                const history=field('sg-job-history');history.replaceChildren();
+                (d.history||[]).slice(0,12).forEach(h=>{const p=document.createElement('p');p.textContent=(h.display_name||'Kullanıcı')+' · '+formatDate(h.created_at)+' — '+(h.action==='note_added'?'Not eklendi':'Görev güncellendi');history.appendChild(p);});
+                field('sg-job-note-form').hidden=!permissions.has('jobs.add_note');
+                field('sg-job-dialog').showModal();
+            }).catch(e=>{window.alert(e.message);});
+        };
+        field('sg-job-add').addEventListener('click',openNew);
+        field('sg-job-close').addEventListener('click',()=>field('sg-job-dialog').close());
+        field('sg-job-dialog').addEventListener('click',e=>{if(e.target===field('sg-job-dialog'))field('sg-job-dialog').close();});
+        form.addEventListener('submit',e=>{
+            e.preventDefault();const id=Number(field('sg-job-id').value||0);
+            const payload={title:field('sg-job-title').value.trim(),description:field('sg-job-description').value,start_date:field('sg-job-start').value,due_date:field('sg-job-due').value,assigned_personnel_id:Number(field('sg-job-person').value||0),party_id:Number(field('sg-job-customer').value||0),priority:field('sg-job-priority').value,status:field('sg-job-status').value};
+            const button=form.querySelector('button[type="submit"]');button.disabled=true;field('sg-job-message').textContent='Kaydediliyor…';
+            request(id?SG_APP.jobsEndpoint+'/'+id:SG_APP.jobsEndpoint,{method:id?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+            .then(r=>{field('sg-job-message').textContent=r.message||'Kaydedildi.';return load();})
+            .then(()=>{if(!id)field('sg-job-dialog').close();}).catch(err=>{field('sg-job-message').textContent=err.message;}).finally(()=>{button.disabled=false;});
+        });
+        field('sg-job-note-form').addEventListener('submit',e=>{
+            e.preventDefault();if(!activeId||!permissions.has('jobs.add_note'))return;
+            const note=field('sg-job-note').value.trim();if(!note)return;
+            request(SG_APP.jobsEndpoint+'/'+activeId+'/notes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({note})})
+            .then(()=>{field('sg-job-note').value='';openJob(activeId);}).catch(err=>{window.alert(err.message);});
+        });
+        field('sg-job-search').addEventListener('input',renderList);field('sg-job-status-filter').addEventListener('change',renderList);
+        root.querySelectorAll('[data-job-view]').forEach(b=>b.addEventListener('click',()=>{view=b.dataset.jobView;root.querySelectorAll('[data-job-view]').forEach(x=>x.classList.toggle('is-active',x===b));field('sg-job-calendar').hidden=view!=='calendar';root.querySelector('.sg-job-list-panel').hidden=view!=='list';}));
+        field('sg-calendar-prev').addEventListener('click',()=>{calendarDate.setMonth(calendarDate.getMonth()-1);renderCalendar();});
+        field('sg-calendar-next').addEventListener('click',()=>{calendarDate.setMonth(calendarDate.getMonth()+1);renderCalendar();});
+        loadOptions().then(load).catch(e=>{field('sg-job-rows').textContent=e.message;});
+    };
+
     const closeMenu = () => {
         if (!sidebar || !toggle) return;
         sidebar.classList.remove('is-open');
@@ -469,6 +575,7 @@
         try { setupAccountsModule(granted); } catch (e) { console.error('Cari hesap modülü başlatılamadı:', e); }
         try { setupCashBankModule(granted); } catch (e) { console.error('Kasa/banka modülü başlatılamadı:', e); }
         try { setupIncomeExpenseModule(granted); } catch (e) { console.error('Gelir/gider modülü başlatılamadı:', e); }
+        try { setupJobsModule(granted); } catch (e) { console.error('İş takibi modülü başlatılamadı:', e); }
         loadDashboard();
     }).catch(() => {
         if (sessionState) sessionState.textContent = 'Kontrol edilemedi';
