@@ -82,15 +82,40 @@
         });
     };
 
-    const apiRequest = (url, options = {}) => fetch(url, {
-        credentials: 'same-origin',
-        ...options,
-        headers: { 'X-WP-Nonce': SG_APP.nonce, 'Accept': 'application/json', ...(options.headers || {}) }
-    }).then(async (response) => {
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.message || 'İşlem tamamlanamadı.');
-        return data;
-    });
+    const loadingOverlay = root.querySelector('#sg-loading-overlay');
+    let pendingRequests = 0;
+    let loadingTimer = null;
+    const beginLoading = () => {
+        pendingRequests += 1;
+        if (loadingTimer) window.clearTimeout(loadingTimer);
+        loadingTimer = window.setTimeout(() => {
+            if (loadingOverlay && pendingRequests > 0) {
+                loadingOverlay.hidden = false;
+                root.setAttribute('aria-busy', 'true');
+            }
+        }, 180);
+    };
+    const endLoading = () => {
+        pendingRequests = Math.max(0, pendingRequests - 1);
+        if (pendingRequests === 0) {
+            if (loadingTimer) window.clearTimeout(loadingTimer);
+            loadingTimer = null;
+            if (loadingOverlay) loadingOverlay.hidden = true;
+            root.removeAttribute('aria-busy');
+        }
+    };
+    const apiRequest = (url, options = {}) => {
+        beginLoading();
+        return fetch(url, {
+            credentials: 'same-origin',
+            ...options,
+            headers: { 'X-WP-Nonce': SG_APP.nonce, 'Accept': 'application/json', ...(options.headers || {}) }
+        }).then(async (response) => {
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.message || 'İşlem tamamlanamadı.');
+            return data;
+        }).finally(endLoading);
+    };
 
 
     const setupDashboardCalendar = (permissions) => {
