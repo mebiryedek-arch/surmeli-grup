@@ -4,23 +4,28 @@ defined( 'ABSPATH' ) || exit;
 ?>
 <div class="sg-app" id="sg-app-root">
     <header class="sg-topbar">
+        <div class="sg-topbar-left">
+            <a class="sg-home-button" href="<?php echo esc_url( SG_APP_URL ); ?>" aria-label="Ana sayfa" title="Ana sayfa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            <button class="sg-menu-toggle" type="button" aria-label="Menüyü aç" aria-expanded="false" aria-controls="sg-sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+        </div>
         <a class="sg-topbar-logo" href="<?php echo esc_url( SG_APP_URL ); ?>" aria-label="Sürmeli Grup ana ekran"><img src="<?php echo esc_url( SG_PLUGIN_URL . 'assets/images/surmeli-grup-logo.svg' ); ?>" alt="Sürmeli Grup"></a>
-        <div class="sg-topbar-right"><span class="sg-user-chip" id="sg-user-name">Hesap bilgisi yükleniyor…</span><button class="sg-menu-toggle" type="button" aria-label="Menüyü aç" aria-expanded="false">☰</button><a class="sg-home-button" href="<?php echo esc_url( SG_APP_URL ); ?>" aria-label="Ana sayfa" title="Ana sayfa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
+        <div class="sg-topbar-right"><span class="sg-user-chip" id="sg-user-name">Hesap bilgisi yükleniyor…</span></div>
     </header>
+    <button class="sg-menu-backdrop" type="button" aria-label="Menüyü kapat" tabindex="-1"></button>
     <div class="sg-layout">
-        <aside class="sg-sidebar" aria-label="Ana navigasyon">
+        <aside class="sg-sidebar" id="sg-sidebar" aria-label="Ana navigasyon">
             <nav>
-                <a class="is-active" href="#dashboard" data-section="dashboard">Genel Bakış</a>
+                <a class="is-active" href="#dashboard" data-section="dashboard"><span class="sg-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg></span><span class="sg-nav-label">Genel Bakış</span></a>
                 <span class="sg-nav-heading">İşletme</span>
-                <a href="#customers" data-section="customers" data-permission="customers.view">Müşteriler</a>
-                <a href="#suppliers" data-section="suppliers" data-permission="suppliers.view">Tedarikçiler</a>
-                <a href="#accounts" data-section="accounts" data-permission="accounts.view">Cari Hesaplar</a>
-                <a href="#cash-bank" data-section="cash-bank" data-permission="cash.view">Kasa ve Banka</a>
-                <a href="#income-expense" data-section="income-expense" data-permission="income_expense.view">Gelir ve Gider</a>
+                <a href="#customers" data-section="customers" data-permission="customers.view"><span class="sg-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-1.5a4.5 4.5 0 0 0-4.5-4.5h-4A4.5 4.5 0 0 0 3 18.5V20M9.5 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM16 3.2a4 4 0 0 1 0 7.6M17 14h.5a4.5 4.5 0 0 1 4.5 4.5V20"/></svg></span><span class="sg-nav-label">Müşteriler</span></a>
+                <a href="#suppliers" data-section="suppliers" data-permission="suppliers.view"><span class="sg-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21V7l9-4 9 4v14M3 11h18M8 21v-6h8v6M8 8h.01M12 8h.01M16 8h.01"/></svg></span><span class="sg-nav-label">Tedarikçiler</span></a>
+                <a href="#accounts" data-section="accounts" data-permission="accounts.view"><span class="sg-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span><span class="sg-nav-label">Cari Hesaplar</span></a>
+                <a href="#cash-bank" data-section="cash-bank" data-permission="cash.view"><span class="sg-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18v11H3zM2 9l2-5h16l2 5M8 14h8M12 12v4"/></svg></span><span class="sg-nav-label">Kasa ve Banka</span></a>
+                <a href="#income-expense" data-section="income-expense" data-permission="income_expense.view"><span class="sg-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h17M7 15l4-4 3 2 6-7M16 6h4v4"/></svg></span><span class="sg-nav-label">Gelir ve Gider</span></a>
                 <span class="sg-nav-heading">Organizasyon</span>
-                <a href="#personnel" data-section="personnel" data-permission="personnel.view">Personel</a>
-                <a href="#jobs" data-section="jobs" data-permission="jobs.view">İş Takip</a>
-                <a href="#reports" data-section="reports" data-permission="reports.view">Raporlar</a>
+                <a href="#personnel" data-section="personnel" data-permission="personnel.view"><span class="sg-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21v-2a7 7 0 0 1 14 0v2M16 4a4 4 0 0 1 0 8M18 15a5 5 0 0 1 4 5v1"/></svg></span><span class="sg-nav-label">Personel</span></a>
+                <a href="#jobs" data-section="jobs" data-permission="jobs.view"><span class="sg-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18M8 14l2 2 5-5"/></svg></span><span class="sg-nav-label">İş Takip</span></a>
+                <a href="#reports" data-section="reports" data-permission="reports.view"><span class="sg-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V4M4 20h17M8 16v-4M13 16V7M18 16v-7"/></svg></span><span class="sg-nav-label">Raporlar</span></a>
             </nav>
             <div class="sg-sidebar-foot">
                 <div class="sg-sidebar-secure"><span class="sg-status-dot"></span> Güvenli oturum</div>
