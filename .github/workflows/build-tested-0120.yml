@@ -42,11 +42,11 @@ jobs:
           git archive HEAD | tar -x -C dist/surmeli-grup
           cd dist
           zip -qr surmeli-grup-0.12.2.zip surmeli-grup
-          unzip -t surmeli-grup-0.12.1.zip
-          unzip -l surmeli-grup-0.12.1.zip | grep -E 'surmeli-grup/(surmeli-grup.php|app/class-pwa.php|database/migrations/008-personnel-tracking.php|modules/personnel/class-personnel.php)$'
+          unzip -t surmeli-grup-0.12.2.zip
+          unzip -l surmeli-grup-0.12.2.zip | grep -E 'surmeli-grup/(surmeli-grup.php|app/class-pwa.php|database/migrations/008-personnel-tracking.php|modules/personnel/class-personnel.php)$'
       - uses: actions/upload-artifact@v4
         with:
           name: surmeli-grup-0.12.2-php81-tested
-          path: dist/surmeli-grup-0.12.1.zip
+          path: dist/surmeli-grup-0.12.2.zip
           if-no-files-found: error
           retention-days: 30
