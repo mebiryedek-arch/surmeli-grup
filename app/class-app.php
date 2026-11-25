@@ -119,8 +119,6 @@ final class SG_App {
                 'incomeExpenseOptionsEndpoint' => esc_url_raw( rest_url( 'sg/v1/income-expense-options' ) ),
                 'jobsEndpoint' => esc_url_raw( rest_url( 'sg/v1/jobs' ) ),
                 'jobOptionsEndpoint' => esc_url_raw( rest_url( 'sg/v1/job-options' ) ),
-                'jobsEndpoint' => esc_url_raw( rest_url( 'sg/v1/jobs' ) ),
-                'jobOptionsEndpoint' => esc_url_raw( rest_url( 'sg/v1/job-options' ) ),
             ) );
             echo '<script>window.SG_APP=' . wp_json_encode( array(
                 'version' => SG_VERSION,
