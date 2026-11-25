@@ -94,7 +94,8 @@ final class SG_App {
     private static function render_standalone( string $login_error = '' ): void {
         $css_url = SG_PLUGIN_URL . 'assets/css/app.css?ver=' . rawurlencode( SG_VERSION );
         $logo_url = SG_PLUGIN_URL . 'assets/images/surmeli-grup-logo.svg';
-        echo '<!doctype html><html lang="tr"><head><meta charset="' . esc_attr( get_bloginfo( 'charset' ) ) . '"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#0878C9"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Sürmeli Grup"><link rel="manifest" href="' . esc_url( add_query_arg( 'sg_pwa_manifest', '1', home_url( '/' ) ) ) . '"><link rel="apple-touch-icon" href="' . esc_url( $logo_url ) . '"><title>' . esc_html__( 'Sürmeli Grup İşletme Yönetimi', 'surmeli-grup' ) . '</title><link rel="stylesheet" href="' . esc_url( $css_url ) . '"></head><body class="sg-standalone-app">';
+        $security_css_url = SG_PLUGIN_URL . 'assets/css/account-security.css?ver=' . rawurlencode( SG_VERSION );
+        echo '<!doctype html><html lang="tr"><head><meta charset="' . esc_attr( get_bloginfo( 'charset' ) ) . '"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#0878C9"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Sürmeli Grup"><link rel="manifest" href="' . esc_url( add_query_arg( 'sg_pwa_manifest', '1', home_url( '/' ) ) ) . '"><link rel="apple-touch-icon" href="' . esc_url( $logo_url ) . '"><title>' . esc_html__( 'Sürmeli Grup İşletme Yönetimi', 'surmeli-grup' ) . '</title><link rel="stylesheet" href="' . esc_url( $css_url ) . '"><link rel="stylesheet" href="' . esc_url( $security_css_url ) . '"></head><body class="sg-standalone-app">';
         if ( ! is_user_logged_in() ) {
             self::render_login( $login_error );
         } elseif ( ! SG_Permissions::current_user_can( 'app.access' ) ) {
@@ -143,6 +144,7 @@ final class SG_App {
             ) ) . ';</script>';
             require SG_PLUGIN_DIR . 'app/templates/app-shell.php';
             echo '<script src="' . esc_url( SG_PLUGIN_URL . 'assets/js/app.js?ver=' . SG_VERSION ) . '" defer></script>';
+            echo '<script src="' . esc_url( SG_PLUGIN_URL . 'assets/js/account-security.js?ver=' . SG_VERSION ) . '" defer></script>';
         }
         echo '<script>if ("serviceWorker" in navigator && location.protocol === "https:") { window.addEventListener("load", function () { navigator.serviceWorker.register(' . wp_json_encode( add_query_arg( 'sg_pwa_sw', '1', home_url( '/' ) ) ) . ', { scope: ' . wp_json_encode( SG_APP_URL ) . ' }).catch(function (error) { console.warn("Sürmeli Grup PWA kaydı başarısız:", error); }); }); }</script>';
         echo '</body></html>';
