@@ -82,15 +82,41 @@
         });
     };
 
-    const apiRequest = (url, options = {}) => fetch(url, {
-        credentials: 'same-origin',
-        ...options,
-        headers: { 'X-WP-Nonce': SG_APP.nonce, 'Accept': 'application/json', ...(options.headers || {}) }
-    }).then(async (response) => {
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.message || 'İşlem tamamlanamadı.');
-        return data;
-    });
+    const loadingOverlay = root.querySelector('#sg-loading-overlay');
+    if (loadingOverlay && document.body && loadingOverlay.parentNode !== document.body) document.body.appendChild(loadingOverlay);
+    let pendingRequests = 0;
+    let loadingTimer = null;
+    const beginLoading = () => {
+        pendingRequests += 1;
+        if (loadingTimer) window.clearTimeout(loadingTimer);
+        loadingTimer = window.setTimeout(() => {
+            if (loadingOverlay && pendingRequests > 0) {
+                loadingOverlay.hidden = false;
+                root.setAttribute('aria-busy', 'true');
+            }
+        }, 180);
+    };
+    const endLoading = () => {
+        pendingRequests = Math.max(0, pendingRequests - 1);
+        if (pendingRequests === 0) {
+            if (loadingTimer) window.clearTimeout(loadingTimer);
+            loadingTimer = null;
+            if (loadingOverlay) loadingOverlay.hidden = true;
+            root.removeAttribute('aria-busy');
+        }
+    };
+    const apiRequest = (url, options = {}) => {
+        beginLoading();
+        return fetch(url, {
+            credentials: 'same-origin',
+            ...options,
+            headers: { 'X-WP-Nonce': SG_APP.nonce, 'Accept': 'application/json', ...(options.headers || {}) }
+        }).then(async (response) => {
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.message || 'İşlem tamamlanamadı.');
+            return data;
+        }).finally(endLoading);
+    };
 
 
     const setupDashboardCalendar = (permissions) => {
@@ -127,6 +153,7 @@
             if (section === 'accounts' && !permissions.has('accounts.view')) section = 'dashboard';
             if (section === 'cash-bank' && !permissions.has('cash.view')) section = 'dashboard';
             if (section === 'income-expense' && !permissions.has('income_expense.view')) section = 'dashboard';
+            if (section === 'personnel' && !permissions.has('personnel.view')) section = 'dashboard';
             if (section === 'jobs' && !permissions.has('jobs.view')) section = 'dashboard';
             root.querySelectorAll('[data-section-view]').forEach((view) => { view.hidden = view.dataset.sectionView !== section; });
             root.querySelectorAll('.sg-sidebar [data-section]').forEach((link) => link.classList.toggle('is-active', link.dataset.section === section));
@@ -179,8 +206,8 @@
                 }
                 customerItems.forEach((customer) => {
                     const tr = document.createElement('tr');
-                    [customer.party_code, customer.company_name, customer.contact_name, customer.phone ? formatTurkishPhone(customer.phone) : '', customer.email].forEach((value) => { const td = document.createElement('td'); td.textContent = value || '—'; tr.appendChild(td); });
-                    const status = document.createElement('td'); status.textContent = customer.status === 'active' ? 'Aktif' : 'Pasif'; status.className = customer.status === 'active' ? 'sg-customer-active' : 'sg-customer-passive'; tr.appendChild(status);
+                    [['Müşteri Kodu',customer.party_code],['Müşteri / Firma',customer.company_name],['Yetkili',customer.contact_name],['Telefon',customer.phone ? formatTurkishPhone(customer.phone) : ''],['E-posta',customer.email]].forEach(([label,value]) => { const td = document.createElement('td'); td.dataset.label = label; td.textContent = value || '—'; tr.appendChild(td); });
+                    const status = document.createElement('td'); status.dataset.label = 'Durum'; status.textContent = customer.status === 'active' ? 'Aktif' : 'Pasif'; status.className = customer.status === 'active' ? 'sg-customer-active' : 'sg-customer-passive'; tr.appendChild(status);
                     const actions = document.createElement('td'); actions.className = 'sg-customer-actions';
                     const view = document.createElement('button'); view.type = 'button'; view.className = 'sg-button sg-button-small sg-button-light'; view.textContent = 'Detay'; view.addEventListener('click', () => openCustomer(customer.id, true)); actions.appendChild(view);
                     if (permissions.has('customers.edit')) { const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'sg-button sg-button-small sg-button-light'; edit.textContent = 'Düzenle'; edit.addEventListener('click', () => openCustomer(customer.id, false)); actions.appendChild(edit); }
@@ -335,6 +362,7 @@
         const cards = val('sg-cash-cards');
         const accountDialog = val('sg-cash-account-dialog');
         const detailDialog = val('sg-cash-detail-dialog');
+        const transferDialog = val('sg-cash-transfer-dialog');
         const money = (v) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(Number(v || 0));
         let cashItems = [];
         let partyItems = [];
@@ -347,6 +375,7 @@
         };
         const load = () => apiRequest(SG_APP.cashAccountsEndpoint).then(data => {
             cashItems = data.items || []; cards.replaceChildren();
+            const transferAdd = val('sg-transfer-add'); const transferHint = val('sg-transfer-availability'); if (transferAdd) { const unavailable = cashItems.length < 2; transferAdd.disabled = unavailable; transferAdd.setAttribute('aria-disabled', unavailable ? 'true' : 'false'); transferAdd.title = unavailable ? 'Transfer için en az iki aktif kasa veya banka hesabı gerekir.' : ''; if (transferHint) { transferHint.textContent = unavailable ? 'Transfer işlemini açmak için önce en az iki aktif kasa veya banka hesabı oluşturun.' : ''; transferHint.hidden = !unavailable; } }
             if (!cashItems.length) { const p = document.createElement('div'); p.className = 'sg-panel sg-cash-empty'; p.textContent = 'Henüz kasa veya banka hesabı oluşturulmadı. İlk hesabınızı ekleyerek başlayın.'; cards.appendChild(p); }
             cashItems.forEach(item => {
                 const card = document.createElement('article'); card.className = 'sg-cash-card';
@@ -403,14 +432,40 @@
             const payload = { transaction_type: val('sg-cash-transaction-type').value, party_id: Number(val('sg-cash-party').value || 0), amount: val('sg-cash-transaction-amount').value.trim().replace(',', '.'), transaction_date: val('sg-cash-transaction-date').value, document_no: val('sg-cash-transaction-document').value, description: val('sg-cash-transaction-description').value };
             apiRequest(SG_APP.cashAccountsEndpoint + '/' + activeCash.id + '/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify(payload) }).then(r => { val('sg-cash-transaction-message').textContent = r.message; val('sg-cash-transaction-amount').value = ''; val('sg-cash-transaction-description').value = ''; load().then(() => { const fresh = cashItems.find(x => Number(x.id) === Number(activeCash.id)); if (fresh) openDetail(fresh); }); }).catch(err => { val('sg-cash-transaction-message').textContent = err.message; }).finally(() => { b.disabled = false; });
         });
+        const loadTransfers = () => {
+            const tbody = val('sg-cash-transfer-rows');
+            if (!tbody || !SG_APP.cashTransfersEndpoint) return;
+            tbody.replaceChildren();
+            const loading = document.createElement('tr'); const loadingCell = document.createElement('td'); loadingCell.colSpan = 6; loadingCell.className = 'sg-table-empty'; loadingCell.textContent = 'Transfer kayıtları yükleniyor…'; loading.appendChild(loadingCell); tbody.appendChild(loading);
+            apiRequest(SG_APP.cashTransfersEndpoint).then(data => {
+                tbody.replaceChildren();
+                if (!data.items || !data.items.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 6; td.className = 'sg-table-empty'; td.textContent = 'Henüz hesaplar arası transfer kaydı bulunmuyor.'; tr.appendChild(td); tbody.appendChild(tr); return; }
+                data.items.forEach(item => {
+                    const tr = document.createElement('tr');
+                    const values = [formatDate(item.transaction_date), item.entry_no, item.from_account_name, item.to_account_name, money(item.amount), item.description || item.document_no || '—'];
+                    const labels = ['Tarih', 'İşlem No', 'Kaynak Hesap', 'Hedef Hesap', 'Tutar', 'Açıklama'];
+                    values.forEach((value, index) => { const td = document.createElement('td'); td.textContent = value || '—'; td.dataset.label = labels[index]; if (index === 4) td.className = 'sg-transfer-amount'; tr.appendChild(td); });
+                    tbody.appendChild(tr);
+                });
+            }).catch(error => { tbody.replaceChildren(); const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 6; td.className = 'sg-table-empty'; td.textContent = error.message; tr.appendChild(td); tbody.appendChild(tr); });
+        };
+        val('sg-transfer-add').addEventListener('click', () => {
+            if (!permissions.has('cash.transfer') || cashItems.length < 2) { if (cashItems.length < 2) { const hint = val('sg-transfer-availability'); if (hint) { hint.textContent = 'Transfer için en az iki aktif kasa veya banka hesabı gereklidir.'; hint.hidden = false; } } return; }
+            val('sg-cash-transfer-form').reset(); val('sg-transfer-date').value = today(); val('sg-transfer-message').textContent = '';
+            fillSelect(val('sg-transfer-from'), cashItems, 'Kaynak hesap seçin'); fillSelect(val('sg-transfer-to'), cashItems, 'Hedef hesap seçin');
+            transferDialog.showModal();
+        });
+        val('sg-cash-transfer-close').addEventListener('click', () => transferDialog.close());
+        transferDialog.addEventListener('click', e => { if (e.target === transferDialog) transferDialog.close(); });
         val('sg-transfer-date').value = today();
         val('sg-cash-transfer-form').addEventListener('submit', e => {
             e.preventDefault(); if (!permissions.has('cash.transfer')) return;
+            if (!val('sg-transfer-from').value || !val('sg-transfer-to').value || val('sg-transfer-from').value === val('sg-transfer-to').value) { val('sg-transfer-message').textContent = 'Kaynak ve hedef hesap farklı olmalıdır.'; return; }
             const b = e.currentTarget.querySelector('button[type="submit"]'); b.disabled = true; val('sg-transfer-message').textContent = 'Transfer kaydediliyor…';
             const payload = { from_account_id: Number(val('sg-transfer-from').value), to_account_id: Number(val('sg-transfer-to').value), amount: val('sg-transfer-amount').value.trim().replace(',', '.'), transaction_date: val('sg-transfer-date').value, document_no: val('sg-transfer-document').value, description: val('sg-transfer-description').value };
-            apiRequest(SG_APP.cashTransfersEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify(payload) }).then(r => { val('sg-transfer-message').textContent = r.message; val('sg-transfer-amount').value = ''; load(); }).catch(err => { val('sg-transfer-message').textContent = err.message; }).finally(() => { b.disabled = false; });
+            apiRequest(SG_APP.cashTransfersEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify(payload) }).then(r => { val('sg-transfer-message').textContent = r.message; val('sg-cash-transfer-form').reset(); transferDialog.close(); load(); loadTransfers(); }).catch(err => { val('sg-transfer-message').textContent = err.message; }).finally(() => { b.disabled = false; });
         });
-        updatePartyOptions(); loadParties(); load();
+        updatePartyOptions(); loadParties(); load(); loadTransfers();
     };
 
     const setupIncomeExpenseModule = (permissions) => {
@@ -562,20 +617,107 @@
         loadOptions().then(load).catch(e=>{field('sg-job-rows').textContent=e.message;});
     };
 
+
+    const setupPersonnelModule = (permissions) => {
+        const rows = root.querySelector('#sg-personnel-rows');
+        if (!rows || !SG_APP.personnelEndpoint || !permissions.has('personnel.view')) return;
+        const field = (id) => root.querySelector('#' + id);
+        const editor = field('sg-personnel-editor');
+        const form = field('sg-personnel-form');
+        const message = field('sg-personnel-message');
+        const fields = {
+            full_name: 'sg-personnel-name', user_id: 'sg-personnel-user-id', phone: 'sg-personnel-phone', email: 'sg-personnel-email',
+            department: 'sg-personnel-department', job_title: 'sg-personnel-title',
+            employment_date: 'sg-personnel-date', status: 'sg-personnel-state', description: 'sg-personnel-description'
+        };
+        let timer = null;
+        const load = () => {
+            const params = new URLSearchParams();
+            if (field('sg-personnel-search').value.trim()) params.set('search', field('sg-personnel-search').value.trim());
+            if (field('sg-personnel-status').value) params.set('status', field('sg-personnel-status').value);
+            rows.replaceChildren();
+            const loading = document.createElement('tr'); const loadingCell = document.createElement('td');
+            loadingCell.colSpan = 8; loadingCell.className = 'sg-table-empty'; loadingCell.textContent = 'Personel kayıtları yükleniyor…'; loading.appendChild(loadingCell); rows.appendChild(loading);
+            apiRequest(SG_APP.personnelEndpoint + (params.toString() ? '?' + params.toString() : '')).then((data) => {
+                const items = Array.isArray(data.items) ? data.items : [];
+                field('sg-personnel-count').textContent = items.length + ' personel kaydı';
+                rows.replaceChildren();
+                if (!items.length) {
+                    const tr = document.createElement('tr'); const td = document.createElement('td');
+                    td.colSpan = 8; td.className = 'sg-table-empty'; td.textContent = 'Aramanızla eşleşen personel bulunamadı.';
+                    tr.appendChild(td); rows.appendChild(tr); return;
+                }
+                items.forEach((person) => {
+                    const tr = document.createElement('tr');
+                    [person.full_name, person.department, person.job_title, person.phone ? formatTurkishPhone(person.phone) : '', person.email, formatDate(person.employment_date)].forEach((value) => {
+                        const td = document.createElement('td'); td.textContent = value || '—'; tr.appendChild(td);
+                    });
+                    const status = document.createElement('td'); status.textContent = person.status === 'active' ? 'Aktif' : 'Pasif';
+                    status.className = person.status === 'active' ? 'sg-customer-active' : 'sg-customer-passive'; tr.appendChild(status);
+                    const actions = document.createElement('td'); actions.className = 'sg-customer-actions';
+                    if (permissions.has('personnel.manage')) {
+                        const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'sg-button sg-button-small sg-button-light';
+                        edit.textContent = 'Düzenle'; edit.addEventListener('click', () => openEditor(person.id)); actions.appendChild(edit);
+                    }
+                    tr.appendChild(actions); rows.appendChild(tr);
+                });
+            }).catch((error) => {
+                rows.replaceChildren(); const tr = document.createElement('tr'); const td = document.createElement('td');
+                td.colSpan = 8; td.className = 'sg-table-empty'; td.textContent = error.message; tr.appendChild(td); rows.appendChild(tr);
+            });
+        };
+        const reset = () => {
+            form.reset(); field('sg-personnel-id').value = ''; field('sg-personnel-state').value = 'active';
+            Object.values(fields).forEach((id) => { field(id).disabled = false; });
+            field('sg-personnel-editor-title').textContent = 'Yeni Personel'; field('sg-personnel-save').hidden = false; message.textContent = '';
+        };
+        const openEditor = (id) => apiRequest(SG_APP.personnelEndpoint + '/' + id).then((person) => {
+            reset(); field('sg-personnel-id').value = person.id;
+            Object.entries(fields).forEach(([key, id]) => { field(id).value = person[key] || (key === 'status' ? 'active' : ''); });
+            field('sg-personnel-editor-title').textContent = 'Personel Kartını Düzenle';
+            editor.showModal();
+        }).catch((error) => window.alert(error.message));
+        field('sg-personnel-add').addEventListener('click', () => { reset(); editor.showModal(); });
+        field('sg-personnel-cancel').addEventListener('click', () => editor.close());
+        editor.addEventListener('click', (event) => { if (event.target === editor) editor.close(); });
+        field('sg-personnel-search').addEventListener('input', () => { window.clearTimeout(timer); timer = window.setTimeout(load, 250); });
+        field('sg-personnel-status').addEventListener('change', load);
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (!permissions.has('personnel.manage')) return;
+            const id = Number(field('sg-personnel-id').value || 0);
+            const payload = {};
+            Object.entries(fields).forEach(([key, id]) => { payload[key] = field(id).value; });
+            const button = field('sg-personnel-save'); button.disabled = true; message.textContent = 'Kaydediliyor…';
+            apiRequest(id ? SG_APP.personnelEndpoint + '/' + id : SG_APP.personnelEndpoint, {
+                method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            }).then((result) => { message.textContent = result.message || 'Personel kaydedildi.'; return load(); })
+                .then(() => editor.close()).catch((error) => { message.textContent = error.message; })
+                .finally(() => { button.disabled = false; });
+        });
+        load();
+    };
+
+    const menuBackdrop = root.querySelector('.sg-menu-backdrop');
     const closeMenu = () => {
         if (!sidebar || !toggle) return;
         sidebar.classList.remove('is-open');
+        if (menuBackdrop) menuBackdrop.classList.remove('is-visible');
         toggle.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('sg-menu-open');
     };
 
     if (toggle && sidebar) {
-        toggle.addEventListener('click', () => {
-            const opened = sidebar.classList.toggle('is-open');
+        toggle.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const opened = !sidebar.classList.contains('is-open');
+            sidebar.classList.toggle('is-open', opened);
+            if (menuBackdrop) menuBackdrop.classList.toggle('is-visible', opened);
             toggle.setAttribute('aria-expanded', opened ? 'true' : 'false');
+            document.body.classList.toggle('sg-menu-open', opened);
         });
-        document.addEventListener('click', (event) => {
-            if (sidebar.classList.contains('is-open') && !sidebar.contains(event.target) && !toggle.contains(event.target)) closeMenu();
-        });
+        if (menuBackdrop) menuBackdrop.addEventListener('click', closeMenu);
+        document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeMenu(); });
         sidebar.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
     }
 
@@ -622,6 +764,7 @@
         try { setupAccountsModule(granted); } catch (e) { console.error('Cari hesap modülü başlatılamadı:', e); }
         try { setupCashBankModule(granted); } catch (e) { console.error('Kasa/banka modülü başlatılamadı:', e); }
         try { setupIncomeExpenseModule(granted); } catch (e) { console.error('Gelir/gider modülü başlatılamadı:', e); }
+        try { setupPersonnelModule(granted); } catch (e) { console.error('Personel modülü başlatılamadı:', e); }
         try { setupJobsModule(granted); } catch (e) { console.error('İş takibi modülü başlatılamadı:', e); }
         loadDashboard();
         try { setupDashboardCalendar(granted); } catch (e) { console.error('Ana sayfa takvimi başlatılamadı:', e); }
