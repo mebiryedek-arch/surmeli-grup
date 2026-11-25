@@ -2,7 +2,7 @@
 Contributors: surmeligrup
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.11.3
+Stable tag: 0.12.0
 
 Sürmeli Grup işletme yönetimi uygulaması. Portal, WordPress sayfası veya shortcode oluşturmadan eklentinin özel URL rotasında çalışır.
 
@@ -78,3 +78,12 @@ Sürmeli Grup işletme yönetimi uygulaması. Portal, WordPress sayfası veya sh
 * Gelir/gider kategori başlangıç kayıtları ve veritabanı migration'ı eklendi.
 * Kasa/banka transfer tarihi alanının hatalı HTML kimliği düzeltildi.
 * Modül başlatma hataları oturum doğrulama hatalarından ayrıldı.
+
+
+== 0.12.0 ==
+- İş Takibi modülü eklendi: görev oluşturma, düzenleme, personel ve müşteri bağlantısı, öncelik ve durum yönetimi.
+- Görev detaylarında notlar ve işlem geçmişi gösterilir.
+- İş Takibi ekranına liste ve aylık takvim görünümleri eklendi.
+- Ana sayfaya gerçek görev kayıtlarından beslenen aylık görev takvimi eklendi.
+- Personel kullanıcıları yalnızca kendilerine atanmış görevleri görüntüler ve izinleri ölçüsünde durum/not günceller.
+- Mevcut sg_jobs, sg_job_history ve sg_job_notes tabloları kullanılır; finansal ve cari tablolara dokunulmaz.
