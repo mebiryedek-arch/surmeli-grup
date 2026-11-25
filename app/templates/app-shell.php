@@ -149,7 +149,7 @@ defined( 'ABSPATH' ) || exit;
                 <dialog class="sg-modal sg-customer-editor" id="sg-personnel-editor">
                     <div class="sg-panel-heading"><div><p class="sg-card-kicker">PERSONEL KARTI</p><h2 id="sg-personnel-editor-title">Yeni Personel</h2></div><button type="button" class="sg-button sg-button-light" id="sg-personnel-cancel">Kapat</button></div>
                     <form id="sg-personnel-form" class="sg-customer-form">
-                        <input type="hidden" id="sg-personnel-id" value="">
+                        <input type="hidden" id="sg-personnel-id" value=""><input type="hidden" id="sg-personnel-user-id" value="">
                         <label class="sg-field-wide"><span>Ad soyad *</span><input id="sg-personnel-name" required maxlength="190"></label>
                         <label><span>Telefon</span><input id="sg-personnel-phone" type="tel" maxlength="17" placeholder="0 (555) 555 55 55" inputmode="numeric"></label>
                         <label><span>E-posta</span><input id="sg-personnel-email" type="email" maxlength="190"></label>
