@@ -349,7 +349,7 @@
         };
         const load = () => apiRequest(SG_APP.cashAccountsEndpoint).then(data => {
             cashItems = data.items || []; cards.replaceChildren();
-            const transferAdd = val('sg-transfer-add'); if (transferAdd) { transferAdd.disabled = cashItems.length < 2; transferAdd.title = cashItems.length < 2 ? 'Transfer için en az iki aktif kasa veya banka hesabı gerekir.' : ''; }
+            const transferAdd = val('sg-transfer-add'); const transferHint = val('sg-transfer-availability'); if (transferAdd) { const unavailable = cashItems.length < 2; transferAdd.disabled = unavailable; transferAdd.setAttribute('aria-disabled', unavailable ? 'true' : 'false'); transferAdd.title = unavailable ? 'Transfer için en az iki aktif kasa veya banka hesabı gerekir.' : ''; if (transferHint) { transferHint.textContent = unavailable ? 'Transfer işlemini açmak için önce en az iki aktif kasa veya banka hesabı oluşturun.' : ''; transferHint.hidden = !unavailable; } }
             if (!cashItems.length) { const p = document.createElement('div'); p.className = 'sg-panel sg-cash-empty'; p.textContent = 'Henüz kasa veya banka hesabı oluşturulmadı. İlk hesabınızı ekleyerek başlayın.'; cards.appendChild(p); }
             cashItems.forEach(item => {
                 const card = document.createElement('article'); card.className = 'sg-cash-card';
@@ -424,7 +424,7 @@
             }).catch(error => { tbody.replaceChildren(); const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 6; td.className = 'sg-table-empty'; td.textContent = error.message; tr.appendChild(td); tbody.appendChild(tr); });
         };
         val('sg-transfer-add').addEventListener('click', () => {
-            if (!permissions.has('cash.transfer') || cashItems.length < 2) return;
+            if (!permissions.has('cash.transfer') || cashItems.length < 2) { if (cashItems.length < 2) { const hint = val('sg-transfer-availability'); if (hint) { hint.textContent = 'Transfer için en az iki aktif kasa veya banka hesabı gereklidir.'; hint.hidden = false; } } return; }
             val('sg-cash-transfer-form').reset(); val('sg-transfer-date').value = today(); val('sg-transfer-message').textContent = '';
             fillSelect(val('sg-transfer-from'), cashItems, 'Kaynak hesap seçin'); fillSelect(val('sg-transfer-to'), cashItems, 'Hedef hesap seçin');
             transferDialog.showModal();

@@ -221,3 +221,28 @@ html,body{margin:0;min-height:100%;background:var(--sg-bg)}body.sg-standalone-ap
 /* Account-to-account transfer history and modal */
 .sg-cash-transfer-panel .sg-panel-heading{align-items:center;gap:16px;flex-wrap:wrap}.sg-cash-transfer-panel .sg-panel-subtitle{margin:5px 0 0;color:var(--sg-muted);font-size:12px}.sg-transfer-table-wrap{margin-top:8px}.sg-transfer-amount{font-weight:750;color:#0878c9;font-variant-numeric:tabular-nums}.sg-transfer-dialog{width:min(680px,calc(100% - 24px));max-width:680px}.sg-transfer-dialog .sg-panel-heading{margin-bottom:18px}.sg-transfer-dialog .sg-customer-form{padding-top:4px}
 @media(max-width:640px){.sg-cash-transfer-panel .sg-panel-heading{align-items:flex-start}.sg-cash-transfer-panel .sg-panel-heading>.sg-button{width:100%}.sg-transfer-table-wrap{overflow:visible}.sg-transfer-table-wrap .sg-dashboard-table,.sg-transfer-table-wrap .sg-dashboard-table tbody{display:block;width:100%}.sg-transfer-table-wrap .sg-dashboard-table thead{display:none}.sg-transfer-table-wrap .sg-dashboard-table tbody tr{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;padding:13px;margin:0 0 10px;border:1px solid var(--sg-border);border-radius:11px;background:#fff}.sg-transfer-table-wrap .sg-dashboard-table tbody td{display:flex;flex-direction:column;min-width:0;padding:0;border:0;text-align:left;overflow-wrap:anywhere}.sg-transfer-table-wrap .sg-dashboard-table tbody td:before{content:attr(data-label);font-size:10px;font-weight:750;color:var(--sg-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}.sg-transfer-table-wrap .sg-dashboard-table tbody td:last-child{grid-column:1/-1}.sg-transfer-table-wrap .sg-dashboard-table tbody td.sg-table-empty{grid-column:1/-1;display:block;padding:8px;text-align:center}.sg-transfer-table-wrap .sg-dashboard-table tbody td.sg-table-empty:before{content:none}}
+
+
+/* Desktop navigation, transfer availability and full brand header refinement */
+@media(min-width:641px){
+ .sg-topbar{height:78px;min-height:78px;padding:0 28px;grid-template-columns:minmax(180px,1fr) auto minmax(180px,1fr);overflow:visible}
+ .sg-topbar-logo{display:flex;align-items:center;justify-content:center;width:190px;height:68px;min-width:190px;overflow:visible}
+ .sg-topbar-logo img{display:block;width:100%;height:auto;max-width:190px;max-height:60px;object-fit:contain;object-position:center}
+ .sg-topbar-left,.sg-topbar-right{min-width:0}
+ .sg-user-chip{max-width:100%;white-space:nowrap}
+ .sg-sidebar{background:linear-gradient(160deg,#0878C9 0%,#0666ad 100%);border-right:0;color:#fff}
+ .sg-sidebar nav a{color:#fff}
+ .sg-sidebar nav a:hover,.sg-sidebar nav a.is-active{background:rgba(255,255,255,.17);color:#fff}
+ .sg-nav-heading{color:rgba(255,255,255,.68)}
+ .sg-sidebar-foot{border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.78)}
+ .sg-sidebar .sg-logout-link{color:#fff!important;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2)}
+ .sg-sidebar .sg-logout-link:hover{background:rgba(255,255,255,.2)!important;color:#fff!important}
+}
+.sg-button:disabled{cursor:not-allowed;opacity:.58;filter:saturate(.65);box-shadow:none}
+.sg-button:disabled:hover{background:var(--sg-blue);color:#fff;transform:none}
+.sg-transfer-availability{margin:9px 0 0;color:#a16207;font-size:11px;line-height:1.45}
+.sg-cash-transfer-panel .sg-panel-heading>div{min-width:0}
+@media(max-width:640px){
+ .sg-transfer-availability{margin-top:7px}
+ .sg-topbar-logo img{width:100%;height:auto}
+}
