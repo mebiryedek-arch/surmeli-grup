@@ -572,7 +572,7 @@
         const form = field('sg-personnel-form');
         const message = field('sg-personnel-message');
         const fields = {
-            full_name: 'sg-personnel-name', phone: 'sg-personnel-phone', email: 'sg-personnel-email',
+            full_name: 'sg-personnel-name', user_id: 'sg-personnel-user-id', phone: 'sg-personnel-phone', email: 'sg-personnel-email',
             department: 'sg-personnel-department', job_title: 'sg-personnel-title',
             employment_date: 'sg-personnel-date', status: 'sg-personnel-state', description: 'sg-personnel-description'
         };
