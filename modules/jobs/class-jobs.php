@@ -94,7 +94,7 @@ final class SG_Jobs {
         return $data;
     }
 
-    private static function validate_references( array $data ): true|WP_Error {
+    private static function validate_references( array $data ): bool|WP_Error {
         global $wpdb;
         if ( ! empty( $data['assigned_personnel_id'] ) && ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM " . self::table( 'personnel' ) . " WHERE id=%d AND status='active'", $data['assigned_personnel_id'] ) ) ) {
             return new WP_Error( 'sg_job_personnel', 'Seçilen personel aktif değil.', array( 'status' => 400 ) );
