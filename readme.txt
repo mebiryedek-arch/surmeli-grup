@@ -83,7 +83,7 @@ Sürmeli Grup işletme yönetimi uygulaması. Portal, WordPress sayfası veya sh
 == 0.12.0 ==
 - İş Takibi modülü eklendi: görev oluşturma, düzenleme, personel ve müşteri bağlantısı, öncelik ve durum yönetimi.
 - Görev detaylarında notlar ve işlem geçmişi gösterilir.
-- İş Takibi ekranına liste ve aylık takvim görünümleri eklendi.
+- İş Takibi ekranına liste, Kanban pano ve aylık takvim görünümleri eklendi.
 - Ana sayfaya gerçek görev kayıtlarından beslenen aylık görev takvimi eklendi.
 - Personel kullanıcıları yalnızca kendilerine atanmış görevleri görüntüler ve izinleri ölçüsünde durum/not günceller.
 - Mevcut sg_jobs, sg_job_history ve sg_job_notes tabloları kullanılır; finansal ve cari tablolara dokunulmaz.
