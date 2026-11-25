@@ -5,6 +5,9 @@ on:
     branches:
       - fix/php81-compat-012
       - feature/personnel-tracking-012
+  pull_request:
+    branches:
+      - fix/php81-compat-012
   workflow_dispatch:
 
 jobs:
