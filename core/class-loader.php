@@ -8,6 +8,7 @@ require_once SG_PLUGIN_DIR . 'core/class-deactivator.php';
 require_once SG_PLUGIN_DIR . 'core/class-permissions.php';
 require_once SG_PLUGIN_DIR . 'admin/class-admin.php';
 require_once SG_PLUGIN_DIR . 'app/class-app.php';
+require_once SG_PLUGIN_DIR . 'app/class-pwa.php';
 require_once SG_PLUGIN_DIR . 'modules/dashboard/class-dashboard.php';
 require_once SG_PLUGIN_DIR . 'modules/customers/class-customers.php';
 require_once SG_PLUGIN_DIR . 'modules/suppliers/class-suppliers.php';
@@ -22,6 +23,7 @@ final class SG_Loader {
         SG_Permissions::init();
         SG_Admin::init();
         SG_App::init();
+        SG_PWA::init();
         SG_Dashboard::init();
         SG_Customers::init();
         SG_Suppliers::init();
