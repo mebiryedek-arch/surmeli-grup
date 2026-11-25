@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
             <button class="sg-menu-toggle" type="button" aria-label="Menüyü aç" aria-expanded="false" aria-controls="sg-sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
         </div>
         <a class="sg-topbar-logo" href="<?php echo esc_url( SG_APP_URL ); ?>" aria-label="Sürmeli Grup ana ekran"><img src="<?php echo esc_url( SG_PLUGIN_URL . 'assets/images/surmeli-grup-logo.svg' ); ?>" alt="Sürmeli Grup"></a>
-        <div class="sg-topbar-right"><span class="sg-user-chip" id="sg-user-name">Hesap bilgisi yükleniyor…</span></div>
+        <div class="sg-topbar-right"><span class="sg-user-chip" id="sg-user-name" data-logout-url="<?php echo esc_url( wp_logout_url( SG_APP_URL ) ); ?>">Hesap bilgisi yükleniyor…</span></div>
     </header>
     <button class="sg-menu-backdrop" type="button" aria-label="Menüyü kapat" tabindex="-1"></button>
     <div class="sg-layout">
