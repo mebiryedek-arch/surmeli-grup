@@ -3,6 +3,7 @@
 const chip = document.getElementById('sg-user-name');
 if (!chip) return;
 const topbarRight = chip.parentElement;
+if (!topbarRight) return;
 let menu = document.getElementById('sg-account-menu');
 if (!menu) {
  menu = document.createElement('div');
@@ -11,6 +12,15 @@ if (!menu) {
  menu.hidden = true;
  menu.innerHTML = '<button type="button" class="sg-account-menu-item" id="sg-password-open">Şifre Değiştir</button><a class="sg-account-menu-item sg-account-menu-logout" href="' + (chip.dataset.logoutUrl || '') + '">Güvenli Çıkış</a>';
  topbarRight.appendChild(menu);
+}
+let passwordOpen = menu.querySelector('#sg-password-open');
+if (!passwordOpen) {
+ passwordOpen = document.createElement('button');
+ passwordOpen.type = 'button';
+ passwordOpen.id = 'sg-password-open';
+ passwordOpen.className = 'sg-account-menu-item';
+ passwordOpen.textContent = 'Şifre Değiştir';
+ menu.insertBefore(passwordOpen, menu.firstChild);
 }
 chip.setAttribute('role', 'button');
 chip.setAttribute('tabindex', '0');
@@ -42,9 +52,14 @@ document.body.appendChild(dialog);
 const el = (id) => dialog.querySelector('#' + id);
 const form = el('sg-password-form');
 const message = el('sg-password-message');
-if (!form || !message || !menu.querySelector('#sg-password-open')) return;
+if (!form || !message) return;
 const close = () => { dialog.close(); form.reset(); message.textContent = ''; };
-el('sg-password-open').addEventListener('click', () => { menu.hidden = true; chip.setAttribute('aria-expanded', 'false'); dialog.showModal(); });
+passwordOpen.onclick = () => {
+ menu.hidden = true;
+ chip.setAttribute('aria-expanded', 'false');
+ if (typeof dialog.showModal === 'function') dialog.showModal();
+ else { dialog.setAttribute('open', ''); dialog.style.display = 'block'; }
+};
 dialog.querySelector('[data-close]').addEventListener('click', close);
 dialog.addEventListener('click', (event) => { if (event.target === dialog) close(); });
 const valid = (value) => value.length >= 8 && /[A-Z]/.test(value) && /[a-z]/.test(value) && /[0-9]/.test(value);
