@@ -4,10 +4,8 @@ defined( 'ABSPATH' ) || exit;
 ?>
 <div class="sg-app" id="sg-app-root">
     <header class="sg-topbar">
-        <a class="sg-brand" href="<?php echo esc_url( SG_APP_URL ); ?>" aria-label="Sürmeli Grup ana ekran">
-            <span class="sg-brand-mark" aria-hidden="true">SG</span><span>Sürmeli Grup</span>
-        </a>
-        <div class="sg-topbar-right"><span class="sg-user-chip" id="sg-user-name">Hesap bilgisi yükleniyor…</span><button class="sg-menu-toggle" type="button" aria-label="Menüyü aç" aria-expanded="false">☰</button></div>
+        <a class="sg-topbar-logo" href="<?php echo esc_url( SG_APP_URL ); ?>" aria-label="Sürmeli Grup ana ekran"><img src="<?php echo esc_url( SG_PLUGIN_URL . 'assets/images/surmeli-grup-logo.svg' ); ?>" alt="Sürmeli Grup"></a>
+        <div class="sg-topbar-right"><span class="sg-user-chip" id="sg-user-name">Hesap bilgisi yükleniyor…</span><a class="sg-home-button" href="<?php echo esc_url( SG_APP_URL ); ?>" aria-label="Ana sayfa" title="Ana sayfa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a><button class="sg-menu-toggle" type="button" aria-label="Menüyü aç" aria-expanded="false">☰</button></div>
     </header>
     <div class="sg-layout">
         <aside class="sg-sidebar" aria-label="Ana navigasyon">
