@@ -43,8 +43,39 @@ final class SG_App {
     }
 
     public static function register_assets(): void {
-        wp_register_style( 'sg-app', SG_PLUGIN_URL . 'assets/css/app.css', array(), SG_VERSION );
-        wp_register_script( 'sg-app', SG_PLUGIN_URL . 'assets/js/app.js', array(), SG_VERSION, true );
+        wp_register_style(
+            'sg-app',
+            SG_PLUGIN_URL . 'assets/css/app.css',
+            array(),
+            SG_VERSION . '.' . filemtime( SG_PLUGIN_DIR . 'assets/css/app.css' )
+        );
+    
+        wp_register_script(
+            'sg-app',
+            SG_PLUGIN_URL . 'assets/js/app.js',
+            array(),
+            SG_VERSION . '.' . filemtime( SG_PLUGIN_DIR . 'assets/js/app.js' ),
+            true
+        );
+    
+        wp_register_style(
+            'sg-account-security',
+            SG_PLUGIN_URL . 'assets/css/account-security.css',
+            array( 'sg-app' ),
+            file_exists( SG_PLUGIN_DIR . 'assets/css/account-security.css' )
+                ? filemtime( SG_PLUGIN_DIR . 'assets/css/account-security.css' )
+                : SG_VERSION
+        );
+    
+        wp_register_script(
+            'sg-account-security',
+            SG_PLUGIN_URL . 'assets/js/account-security.js',
+            array( 'sg-app' ),
+            file_exists( SG_PLUGIN_DIR . 'assets/js/account-security.js' )
+                ? filemtime( SG_PLUGIN_DIR . 'assets/js/account-security.js' )
+                : SG_VERSION,
+            true
+        );
     }
 
     public static function maybe_render_portal(): void {
@@ -101,6 +132,8 @@ final class SG_App {
             self::render_access_denied();
         } else {
             wp_enqueue_script( 'sg-app' );
+            wp_enqueue_style( 'sg-account-security' );
+            wp_enqueue_script( 'sg-account-security' );            
             wp_localize_script( 'sg-app', 'SG_APP', array(
                 'version' => SG_VERSION,
                 'restRoot' => esc_url_raw( rest_url( 'sg/v1/' ) ),
