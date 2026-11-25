@@ -2,10 +2,34 @@
 'use strict';
 if (!window.SG_APP || !SG_APP.restRoot || !SG_APP.nonce) return;
 const chip = document.getElementById('sg-user-name');
-if (!chip || document.getElementById('sg-password-open')) return;
-const open = document.createElement('button');
-open.type = 'button'; open.id = 'sg-password-open'; open.className = 'sg-button sg-button-light sg-password-open'; open.textContent = 'Şifre Değiştir';
-chip.insertAdjacentElement('afterend', open);
+if (!chip || document.getElementById('sg-account-menu')) return;
+const topbarRight = chip.parentElement;
+const menu = document.createElement('div');
+menu.id = 'sg-account-menu';
+menu.className = 'sg-account-menu';
+menu.hidden = true;
+menu.innerHTML = '<button type="button" class="sg-account-menu-item" id="sg-password-open">Şifre Değiştir</button><a class="sg-account-menu-item sg-account-menu-logout" href="' + (chip.dataset.logoutUrl || '') + '">Güvenli Çıkış</a>';
+chip.setAttribute('role', 'button');
+chip.setAttribute('tabindex', '0');
+chip.setAttribute('aria-haspopup', 'true');
+chip.setAttribute('aria-expanded', 'false');
+chip.classList.add('sg-user-chip-trigger');
+topbarRight.appendChild(menu);
+const toggleMenu = () => {
+ const expanded = chip.getAttribute('aria-expanded') === 'true';
+ chip.setAttribute('aria-expanded', String(!expanded));
+ menu.hidden = expanded;
+};
+chip.addEventListener('click', toggleMenu);
+chip.addEventListener('keydown', (event) => {
+ if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleMenu(); }
+});
+document.addEventListener('click', (event) => {
+ if (!topbarRight.contains(event.target)) { menu.hidden = true; chip.setAttribute('aria-expanded', 'false'); }
+});
+document.addEventListener('keydown', (event) => {
+ if (event.key === 'Escape') { menu.hidden = true; chip.setAttribute('aria-expanded', 'false'); }
+});
 const dialog = document.createElement('dialog');
 dialog.className = 'sg-modal sg-password-dialog';
 dialog.innerHTML = '<div class="sg-panel-heading"><div><p class="sg-card-kicker">HESAP GÜVENLİĞİ</p><h2>Şifremi Değiştir</h2></div><button type="button" class="sg-button sg-button-light" data-close>Kapat</button></div><form id="sg-password-form" class="sg-customer-form" autocomplete="off"><label class="sg-field-wide"><span>Mevcut şifre *</span><input id="sg-current-password" type="password" autocomplete="current-password" required></label><label><span>Yeni şifre *</span><input id="sg-new-password" type="password" autocomplete="new-password" required></label><label><span>Yeni şifre (tekrar) *</span><input id="sg-confirm-password" type="password" autocomplete="new-password" required></label><p class="sg-password-rules sg-field-wide">En az 8 karakter; büyük harf, küçük harf ve rakam içermelidir.</p><div class="sg-password-actions sg-field-wide"><button type="button" class="sg-button sg-button-light" id="sg-password-generate">Güçlü Şifre Oluştur</button><button type="submit" class="sg-button sg-button-primary" id="sg-password-save">Şifreyi Güncelle</button></div><p class="sg-password-message sg-field-wide" id="sg-password-message" role="status" aria-live="polite"></p></form>';
@@ -14,7 +38,7 @@ const el = (id) => dialog.querySelector('#' + id);
 const form = el('sg-password-form');
 const message = el('sg-password-message');
 const close = () => { dialog.close(); form.reset(); message.textContent = ''; };
-open.addEventListener('click', () => dialog.showModal());
+el('sg-password-open').addEventListener('click', () => { menu.hidden = true; chip.setAttribute('aria-expanded', 'false'); dialog.showModal(); });
 dialog.querySelector('[data-close]').addEventListener('click', close);
 dialog.addEventListener('click', (event) => { if (event.target === dialog) close(); });
 const valid = (value) => value.length >= 8 && /[A-Z]/.test(value) && /[a-z]/.test(value) && /[0-9]/.test(value);
