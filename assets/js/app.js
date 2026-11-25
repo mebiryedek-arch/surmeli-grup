@@ -127,6 +127,7 @@
             if (section === 'accounts' && !permissions.has('accounts.view')) section = 'dashboard';
             if (section === 'cash-bank' && !permissions.has('cash.view')) section = 'dashboard';
             if (section === 'income-expense' && !permissions.has('income_expense.view')) section = 'dashboard';
+            if (section === 'personnel' && !permissions.has('personnel.view')) section = 'dashboard';
             if (section === 'jobs' && !permissions.has('jobs.view')) section = 'dashboard';
             root.querySelectorAll('[data-section-view]').forEach((view) => { view.hidden = view.dataset.sectionView !== section; });
             root.querySelectorAll('.sg-sidebar [data-section]').forEach((link) => link.classList.toggle('is-active', link.dataset.section === section));
@@ -562,6 +563,87 @@
         loadOptions().then(load).catch(e=>{field('sg-job-rows').textContent=e.message;});
     };
 
+
+    const setupPersonnelModule = (permissions) => {
+        const rows = root.querySelector('#sg-personnel-rows');
+        if (!rows || !SG_APP.personnelEndpoint || !permissions.has('personnel.view')) return;
+        const field = (id) => root.querySelector('#' + id);
+        const editor = field('sg-personnel-editor');
+        const form = field('sg-personnel-form');
+        const message = field('sg-personnel-message');
+        const fields = {
+            full_name: 'sg-personnel-name', user_id: 'sg-personnel-user-id', phone: 'sg-personnel-phone', email: 'sg-personnel-email',
+            department: 'sg-personnel-department', job_title: 'sg-personnel-title',
+            employment_date: 'sg-personnel-date', status: 'sg-personnel-state', description: 'sg-personnel-description'
+        };
+        let timer = null;
+        const load = () => {
+            const params = new URLSearchParams();
+            if (field('sg-personnel-search').value.trim()) params.set('search', field('sg-personnel-search').value.trim());
+            if (field('sg-personnel-status').value) params.set('status', field('sg-personnel-status').value);
+            rows.replaceChildren();
+            const loading = document.createElement('tr'); const loadingCell = document.createElement('td');
+            loadingCell.colSpan = 8; loadingCell.className = 'sg-table-empty'; loadingCell.textContent = 'Personel kayıtları yükleniyor…'; loading.appendChild(loadingCell); rows.appendChild(loading);
+            apiRequest(SG_APP.personnelEndpoint + (params.toString() ? '?' + params.toString() : '')).then((data) => {
+                const items = Array.isArray(data.items) ? data.items : [];
+                field('sg-personnel-count').textContent = items.length + ' personel kaydı';
+                rows.replaceChildren();
+                if (!items.length) {
+                    const tr = document.createElement('tr'); const td = document.createElement('td');
+                    td.colSpan = 8; td.className = 'sg-table-empty'; td.textContent = 'Aramanızla eşleşen personel bulunamadı.';
+                    tr.appendChild(td); rows.appendChild(tr); return;
+                }
+                items.forEach((person) => {
+                    const tr = document.createElement('tr');
+                    [person.full_name, person.department, person.job_title, person.phone ? formatTurkishPhone(person.phone) : '', person.email, formatDate(person.employment_date)].forEach((value) => {
+                        const td = document.createElement('td'); td.textContent = value || '—'; tr.appendChild(td);
+                    });
+                    const status = document.createElement('td'); status.textContent = person.status === 'active' ? 'Aktif' : 'Pasif';
+                    status.className = person.status === 'active' ? 'sg-customer-active' : 'sg-customer-passive'; tr.appendChild(status);
+                    const actions = document.createElement('td'); actions.className = 'sg-customer-actions';
+                    if (permissions.has('personnel.manage')) {
+                        const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'sg-button sg-button-small sg-button-light';
+                        edit.textContent = 'Düzenle'; edit.addEventListener('click', () => openEditor(person.id)); actions.appendChild(edit);
+                    }
+                    tr.appendChild(actions); rows.appendChild(tr);
+                });
+            }).catch((error) => {
+                rows.replaceChildren(); const tr = document.createElement('tr'); const td = document.createElement('td');
+                td.colSpan = 8; td.className = 'sg-table-empty'; td.textContent = error.message; tr.appendChild(td); rows.appendChild(tr);
+            });
+        };
+        const reset = () => {
+            form.reset(); field('sg-personnel-id').value = ''; field('sg-personnel-state').value = 'active';
+            Object.values(fields).forEach((id) => { field(id).disabled = false; });
+            field('sg-personnel-editor-title').textContent = 'Yeni Personel'; field('sg-personnel-save').hidden = false; message.textContent = '';
+        };
+        const openEditor = (id) => apiRequest(SG_APP.personnelEndpoint + '/' + id).then((person) => {
+            reset(); field('sg-personnel-id').value = person.id;
+            Object.entries(fields).forEach(([key, id]) => { field(id).value = person[key] || (key === 'status' ? 'active' : ''); });
+            field('sg-personnel-editor-title').textContent = 'Personel Kartını Düzenle';
+            editor.showModal();
+        }).catch((error) => window.alert(error.message));
+        field('sg-personnel-add').addEventListener('click', () => { reset(); editor.showModal(); });
+        field('sg-personnel-cancel').addEventListener('click', () => editor.close());
+        editor.addEventListener('click', (event) => { if (event.target === editor) editor.close(); });
+        field('sg-personnel-search').addEventListener('input', () => { window.clearTimeout(timer); timer = window.setTimeout(load, 250); });
+        field('sg-personnel-status').addEventListener('change', load);
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (!permissions.has('personnel.manage')) return;
+            const id = Number(field('sg-personnel-id').value || 0);
+            const payload = {};
+            Object.entries(fields).forEach(([key, id]) => { payload[key] = field(id).value; });
+            const button = field('sg-personnel-save'); button.disabled = true; message.textContent = 'Kaydediliyor…';
+            apiRequest(id ? SG_APP.personnelEndpoint + '/' + id : SG_APP.personnelEndpoint, {
+                method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            }).then((result) => { message.textContent = result.message || 'Personel kaydedildi.'; return load(); })
+                .then(() => editor.close()).catch((error) => { message.textContent = error.message; })
+                .finally(() => { button.disabled = false; });
+        });
+        load();
+    };
+
     const closeMenu = () => {
         if (!sidebar || !toggle) return;
         sidebar.classList.remove('is-open');
@@ -622,6 +704,7 @@
         try { setupAccountsModule(granted); } catch (e) { console.error('Cari hesap modülü başlatılamadı:', e); }
         try { setupCashBankModule(granted); } catch (e) { console.error('Kasa/banka modülü başlatılamadı:', e); }
         try { setupIncomeExpenseModule(granted); } catch (e) { console.error('Gelir/gider modülü başlatılamadı:', e); }
+        try { setupPersonnelModule(granted); } catch (e) { console.error('Personel modülü başlatılamadı:', e); }
         try { setupJobsModule(granted); } catch (e) { console.error('İş takibi modülü başlatılamadı:', e); }
         loadDashboard();
         try { setupDashboardCalendar(granted); } catch (e) { console.error('Ana sayfa takvimi başlatılamadı:', e); }

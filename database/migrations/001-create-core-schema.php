@@ -186,11 +186,12 @@ final class SG_Migration_001_Create_Core_Schema {
 
         $tables[] = "CREATE TABLE {$p}sg_personnel (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-            user_id bigint(20) unsigned NOT NULL,
+            user_id bigint(20) unsigned DEFAULT NULL,
             full_name varchar(190) NOT NULL,
             phone varchar(40) DEFAULT NULL,
             email varchar(190) DEFAULT NULL,
             job_title varchar(120) DEFAULT NULL,
+            department varchar(120) DEFAULT NULL,
             employment_date date DEFAULT NULL,
             status varchar(20) NOT NULL DEFAULT 'active',
             description text DEFAULT NULL,
@@ -199,7 +200,7 @@ final class SG_Migration_001_Create_Core_Schema {
             created_at datetime NOT NULL,
             updated_at datetime NOT NULL,
             PRIMARY KEY  (id),
-            UNIQUE KEY user_id (user_id),
+            KEY user_id (user_id),
             KEY full_name (full_name),
             KEY status (status)
         ) ENGINE=InnoDB {$cc};";
