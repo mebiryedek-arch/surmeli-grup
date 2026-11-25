@@ -54,6 +54,9 @@ final class SG_Jobs {
     }
 
     public static function options(): WP_REST_Response {
+        if ( ! SG_Permissions::current_user_can( 'jobs.assign' ) ) {
+            return new WP_REST_Response( array( 'personnel' => array(), 'customers' => array() ), 200 );
+        }
         global $wpdb;
         $people = $wpdb->get_results( "SELECT id,full_name,job_title FROM " . self::table( 'personnel' ) . " WHERE status='active' ORDER BY full_name", ARRAY_A );
         $customers = $wpdb->get_results( "SELECT id,company_name FROM " . self::table( 'parties' ) . " WHERE party_type='customer' AND status='active' ORDER BY company_name", ARRAY_A );
@@ -84,6 +87,9 @@ final class SG_Jobs {
         if ( null !== $request->get_param( 'status' ) ) {
             if ( ! in_array( $status, array( 'new', 'assigned', 'in_progress', 'on_hold', 'completed', 'cancelled' ), true ) ) { return new WP_Error( 'sg_job_status', 'Görev durumu geçersiz.', array( 'status' => 400 ) ); }
             $data['status'] = $status;
+        }
+        if ( ! empty( $data['start_date'] ) && ! empty( $data['due_date'] ) && $data['start_date'] > $data['due_date'] ) {
+            return new WP_Error( 'sg_job_date_order', 'Termin tarihi başlangıç tarihinden önce olamaz.', array( 'status' => 400 ) );
         }
         return $data;
     }
