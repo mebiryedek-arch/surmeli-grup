@@ -246,3 +246,16 @@ html,body{margin:0;min-height:100%;background:var(--sg-bg)}body.sg-standalone-ap
  .sg-transfer-availability{margin-top:7px}
  .sg-topbar-logo img{width:100%;height:auto}
 }
+
+/* Branded global request preloader */
+.sg-loading-overlay{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:20px;background:rgba(15,23,42,.42);backdrop-filter:blur(3px)}
+.sg-loading-overlay[hidden]{display:none!important}
+.sg-loading-card{min-width:220px;display:flex;flex-direction:column;align-items:center;gap:10px;padding:25px 30px;border:1px solid rgba(255,255,255,.7);border-radius:16px;background:#fff;box-shadow:0 18px 55px rgba(15,23,42,.22);color:#263648;text-align:center}
+.sg-loading-logo{display:block;width:76px;height:76px;object-fit:contain;animation:sg-logo-float 1.8s ease-in-out infinite,sg-logo-turn 3.6s ease-in-out infinite;transform-origin:center}
+.sg-loading-spinner{width:25px;height:25px;border:3px solid #dbeaf6;border-top-color:var(--sg-blue);border-right-color:var(--sg-orange);border-radius:50%;animation:sg-loading-spin .8s linear infinite}
+.sg-loading-card strong{font-size:13px;font-weight:750}
+.sg-loading-card small{font-size:11px;color:#718096}
+@keyframes sg-loading-spin{to{transform:rotate(360deg)}}
+@keyframes sg-logo-float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.035)}}
+@keyframes sg-logo-turn{0%,75%,100%{rotate:0deg}85%{rotate:-8deg}95%{rotate:8deg}}
+@media(prefers-reduced-motion:reduce){.sg-loading-logo,.sg-loading-spinner{animation:none}}
