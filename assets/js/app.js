@@ -476,6 +476,26 @@
                 const action=document.createElement('td');const btn=document.createElement('button');btn.type='button';btn.className='sg-button sg-button-light sg-button-small';btn.textContent='Aç';btn.addEventListener('click',()=>openJob(x.id));action.appendChild(btn);tr.appendChild(action);body.appendChild(tr);
             });
         };
+
+        const renderBoard = () => {
+            const board=field('sg-job-board');board.replaceChildren();
+            const q=field('sg-job-search').value.trim().toLocaleLowerCase('tr-TR'),status=field('sg-job-status-filter').value;
+            const rows=items.filter(x=>(!status||x.status===status)&&(!q||(x.title+' '+x.job_no).toLocaleLowerCase('tr-TR').includes(q)));
+            const stages=[['new','Yeni'],['assigned','Atandı'],['in_progress','Devam ediyor'],['on_hold','Beklemede'],['completed','Tamamlandı'],['cancelled','İptal']];
+            stages.forEach(([key,label])=>{
+                const col=document.createElement('section');col.className='sg-job-board-column';
+                const head=document.createElement('h3');head.textContent=label+' · '+rows.filter(x=>x.status===key).length;col.appendChild(head);
+                rows.filter(x=>x.status===key).forEach(x=>{
+                    const card=document.createElement('button');card.type='button';card.className='sg-job-board-card';
+                    const title=document.createElement('strong');title.textContent=x.title;
+                    const meta=document.createElement('small');meta.textContent=(x.job_no||'')+' · '+(x.assigned_name||'Atanmadı');
+                    const due=document.createElement('span');due.textContent=x.due_date?'Termin: '+formatDate(x.due_date):'Termin yok';
+                    card.append(title,meta,due);card.addEventListener('click',()=>openJob(x.id));col.appendChild(card);
+                });
+                board.appendChild(col);
+            });
+        };
+
         const renderCalendar = () => {
             const grid=field('sg-calendar-grid');grid.replaceChildren();
             const y=calendarDate.getFullYear(),m=calendarDate.getMonth();
@@ -491,7 +511,7 @@
                 grid.appendChild(cell);
             }
         };
-        const load = () => request(SG_APP.jobsEndpoint).then(d=>{items=d.items||[];renderMetrics();renderList();renderCalendar();}).catch(e=>{field('sg-job-rows').textContent=e.message;});
+        const load = () => request(SG_APP.jobsEndpoint).then(d=>{items=d.items||[];renderMetrics();renderList();renderBoard();renderCalendar();}).catch(e=>{field('sg-job-rows').textContent=e.message;});
         const resetForm = () => {form.reset();field('sg-job-id').value='';field('sg-job-priority').value='normal';field('sg-job-status').value='new';field('sg-job-message').textContent='';};
         const setReadOnly = (locked) => {
             ['sg-job-title','sg-job-start','sg-job-due','sg-job-person','sg-job-customer','sg-job-priority','sg-job-description'].forEach(id=>field(id).disabled=locked);
@@ -535,8 +555,8 @@
             request(SG_APP.jobsEndpoint+'/'+activeId+'/notes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({note})})
             .then(()=>{field('sg-job-note').value='';openJob(activeId);}).catch(err=>{window.alert(err.message);});
         });
-        field('sg-job-search').addEventListener('input',renderList);field('sg-job-status-filter').addEventListener('change',renderList);
-        root.querySelectorAll('[data-job-view]').forEach(b=>b.addEventListener('click',()=>{view=b.dataset.jobView;root.querySelectorAll('[data-job-view]').forEach(x=>x.classList.toggle('is-active',x===b));field('sg-job-calendar').hidden=view!=='calendar';root.querySelector('.sg-job-list-panel').hidden=view!=='list';}));
+        field('sg-job-search').addEventListener('input',()=>{renderList();renderBoard();});field('sg-job-status-filter').addEventListener('change',()=>{renderList();renderBoard();});
+        root.querySelectorAll('[data-job-view]').forEach(b=>b.addEventListener('click',()=>{view=b.dataset.jobView;root.querySelectorAll('[data-job-view]').forEach(x=>x.classList.toggle('is-active',x===b));field('sg-job-calendar').hidden=view!=='calendar';root.querySelector('.sg-job-list-panel').hidden=view!=='list';field('sg-job-board').hidden=view!=='board';}));
         field('sg-calendar-prev').addEventListener('click',()=>{calendarDate.setMonth(calendarDate.getMonth()-1);renderCalendar();});
         field('sg-calendar-next').addEventListener('click',()=>{calendarDate.setMonth(calendarDate.getMonth()+1);renderCalendar();});
         loadOptions().then(load).catch(e=>{field('sg-job-rows').textContent=e.message;});
