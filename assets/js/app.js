@@ -349,6 +349,7 @@
         };
         const load = () => apiRequest(SG_APP.cashAccountsEndpoint).then(data => {
             cashItems = data.items || []; cards.replaceChildren();
+            const transferAdd = val('sg-transfer-add'); if (transferAdd) { transferAdd.disabled = cashItems.length < 2; transferAdd.title = cashItems.length < 2 ? 'Transfer için en az iki aktif kasa veya banka hesabı gerekir.' : ''; }
             if (!cashItems.length) { const p = document.createElement('div'); p.className = 'sg-panel sg-cash-empty'; p.textContent = 'Henüz kasa veya banka hesabı oluşturulmadı. İlk hesabınızı ekleyerek başlayın.'; cards.appendChild(p); }
             cashItems.forEach(item => {
                 const card = document.createElement('article'); card.className = 'sg-cash-card';
