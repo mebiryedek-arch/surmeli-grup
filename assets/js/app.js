@@ -92,6 +92,33 @@
         return data;
     });
 
+
+    const setupDashboardCalendar = (permissions) => {
+        const grid=root.querySelector('#sg-dashboard-calendar-grid');
+        if(!grid||!permissions.has('jobs.view')||!SG_APP.jobsEndpoint)return;
+        let date=new Date(), tasks=[];
+        const render=()=>{
+            grid.replaceChildren();
+            const y=date.getFullYear(),m=date.getMonth();
+            const title=root.querySelector('#sg-dashboard-calendar-title');
+            if(title)title.textContent=new Intl.DateTimeFormat('tr-TR',{month:'long',year:'numeric'}).format(date);
+            ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].forEach(v=>{const h=document.createElement('div');h.className='sg-calendar-weekday';h.textContent=v;grid.appendChild(h);});
+            const first=new Date(y,m,1),start=new Date(y,m,1-((first.getDay()+6)%7));
+            for(let i=0;i<42;i++){
+                const day=new Date(start);day.setDate(start.getDate()+i);
+                const key=[day.getFullYear(),String(day.getMonth()+1).padStart(2,'0'),String(day.getDate()).padStart(2,'0')].join('-');
+                const cell=document.createElement('div');cell.className='sg-calendar-day'+(day.getMonth()!==m?' is-muted':'');
+                const n=document.createElement('span');n.className='sg-calendar-day-number';n.textContent=day.getDate();cell.appendChild(n);
+                tasks.filter(t=>String(t.due_date||'').slice(0,10)===key).slice(0,3).forEach(t=>{const b=document.createElement('button');b.type='button';b.className='sg-calendar-event';b.textContent=t.title;b.title=t.title;b.addEventListener('click',()=>{window.location.hash='jobs';});cell.appendChild(b);});
+                grid.appendChild(cell);
+            }
+        };
+        const load=()=>apiRequest(SG_APP.jobsEndpoint).then(d=>{tasks=d.items||[];render();}).catch(()=>{grid.textContent='Görev takvimi şu anda yüklenemiyor.';});
+        root.querySelector('#sg-dashboard-calendar-prev').addEventListener('click',()=>{date.setMonth(date.getMonth()-1);render();});
+        root.querySelector('#sg-dashboard-calendar-next').addEventListener('click',()=>{date.setMonth(date.getMonth()+1);render();});
+        load();
+    };
+
     const setupNavigation = (permissions) => {
         const activate = () => {
             let section = (window.location.hash || '#dashboard').slice(1);
@@ -577,6 +604,7 @@
         try { setupIncomeExpenseModule(granted); } catch (e) { console.error('Gelir/gider modülü başlatılamadı:', e); }
         try { setupJobsModule(granted); } catch (e) { console.error('İş takibi modülü başlatılamadı:', e); }
         loadDashboard();
+        try { setupDashboardCalendar(granted); } catch (e) { console.error('Ana sayfa takvimi başlatılamadı:', e); }
     }).catch(() => {
         if (sessionState) sessionState.textContent = 'Kontrol edilemedi';
         if (apiState) apiState.textContent = 'Bağlantı hatası';
