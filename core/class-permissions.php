@@ -25,7 +25,7 @@ final class SG_Permissions {
         'income_expense.view' => 'Gelir ve giderleri görüntüleme',
         'income_expense.create' => 'Gelir/gider kaydı oluşturma',
         'personnel.view' => 'Personeli görüntüleme',
-        'personnel.manage' => 'Personel yönetimi',
+        'personnel.manage' => 'Personel kartı oluşturma ve düzenleme',
         'jobs.view' => 'İşleri görüntüleme',
         'jobs.view_all' => 'Tüm işleri görüntüleme',
         'jobs.create' => 'İş oluşturma',
