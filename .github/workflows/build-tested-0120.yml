@@ -1,10 +1,11 @@
-name: Build tested Sürmeli Grup 0.12.1 ZIP
+name: Build tested Sürmeli Grup 0.12.2 ZIP
 
 on:
   push:
     branches:
       - fix/php81-compat-012
       - feature/personnel-tracking-012
+      - feature/portal-pwa-header-0122
   pull_request:
     branches:
       - fix/php81-compat-012
@@ -23,11 +24,12 @@ jobs:
       - name: Verify plugin and migration entry points
         run: |
           test -f surmeli-grup.php
-          grep -q "Version: 0.12.1" surmeli-grup.php
+          grep -q "Version: 0.12.2" surmeli-grup.php
           grep -q "SG_DB_VERSION', '1.7.0'" surmeli-grup.php
           test -f database/migrations/007-job-tracking.php
           test -f database/migrations/008-personnel-tracking.php
           test -f modules/personnel/class-personnel.php
+          test -f app/class-pwa.php
       - name: PHP 8.1 syntax check
         run: |
           php -v
@@ -39,12 +41,12 @@ jobs:
           mkdir -p dist/surmeli-grup
           git archive HEAD | tar -x -C dist/surmeli-grup
           cd dist
-          zip -qr surmeli-grup-0.12.1.zip surmeli-grup
+          zip -qr surmeli-grup-0.12.2.zip surmeli-grup
           unzip -t surmeli-grup-0.12.1.zip
-          unzip -l surmeli-grup-0.12.1.zip | grep -E 'surmeli-grup/(surmeli-grup.php|database/migrations/008-personnel-tracking.php|modules/personnel/class-personnel.php)$'
+          unzip -l surmeli-grup-0.12.1.zip | grep -E 'surmeli-grup/(surmeli-grup.php|app/class-pwa.php|database/migrations/008-personnel-tracking.php|modules/personnel/class-personnel.php)$'
       - uses: actions/upload-artifact@v4
         with:
-          name: surmeli-grup-0.12.1-php81-tested
+          name: surmeli-grup-0.12.2-php81-tested
           path: dist/surmeli-grup-0.12.1.zip
           if-no-files-found: error
           retention-days: 30
