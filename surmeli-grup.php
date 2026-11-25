@@ -5,7 +5,7 @@
  * Version: 0.12.0
  * Requires at least: 6.4
  * Requires PHP: 8.1
- * Author: Mebir.NET
+ * Author: Mebir.NET (Tuncer Ünal)
  * Author URI: https://mebir.net
  * Text Domain: surmeli-grup
  * Domain Path: /languages
