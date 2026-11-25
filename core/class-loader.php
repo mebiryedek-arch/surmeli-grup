@@ -6,6 +6,7 @@ require_once SG_PLUGIN_DIR . 'core/class-migrator.php';
 require_once SG_PLUGIN_DIR . 'core/class-installer.php';
 require_once SG_PLUGIN_DIR . 'core/class-deactivator.php';
 require_once SG_PLUGIN_DIR . 'core/class-permissions.php';
+require_once SG_PLUGIN_DIR . 'core/class-account-security.php';
 require_once SG_PLUGIN_DIR . 'admin/class-admin.php';
 require_once SG_PLUGIN_DIR . 'app/class-app.php';
 require_once SG_PLUGIN_DIR . 'app/class-pwa.php';
@@ -21,6 +22,7 @@ require_once SG_PLUGIN_DIR . 'modules/jobs/class-jobs.php';
 final class SG_Loader {
     public static function init(): void {
         SG_Permissions::init();
+        SG_Account_Security::init();
         SG_Admin::init();
         SG_App::init();
         SG_PWA::init();
