@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Sürmeli Grup İşletme Yönetimi
  * Description: Sürmeli Grup işletme, cari hesap ve görev yönetimi uygulamasının çekirdeği.
- * Version: 0.11.3
+ * Version: 0.12.0
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Author: Sürmeli Grup
@@ -12,7 +12,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SG_VERSION', '0.11.3' );
+define( 'SG_VERSION', '0.12.0' );
 define( 'SG_DB_VERSION', '1.5.0' );
 // Fixed application address: intentionally not configurable from WordPress settings.
 define( 'SG_APP_URL', 'https://surmeligrup.com.tr/musteritakip/' );
