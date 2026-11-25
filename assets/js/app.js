@@ -336,6 +336,7 @@
         const cards = val('sg-cash-cards');
         const accountDialog = val('sg-cash-account-dialog');
         const detailDialog = val('sg-cash-detail-dialog');
+        const transferDialog = val('sg-cash-transfer-dialog');
         const money = (v) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(Number(v || 0));
         let cashItems = [];
         let partyItems = [];
@@ -404,14 +405,40 @@
             const payload = { transaction_type: val('sg-cash-transaction-type').value, party_id: Number(val('sg-cash-party').value || 0), amount: val('sg-cash-transaction-amount').value.trim().replace(',', '.'), transaction_date: val('sg-cash-transaction-date').value, document_no: val('sg-cash-transaction-document').value, description: val('sg-cash-transaction-description').value };
             apiRequest(SG_APP.cashAccountsEndpoint + '/' + activeCash.id + '/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify(payload) }).then(r => { val('sg-cash-transaction-message').textContent = r.message; val('sg-cash-transaction-amount').value = ''; val('sg-cash-transaction-description').value = ''; load().then(() => { const fresh = cashItems.find(x => Number(x.id) === Number(activeCash.id)); if (fresh) openDetail(fresh); }); }).catch(err => { val('sg-cash-transaction-message').textContent = err.message; }).finally(() => { b.disabled = false; });
         });
+        const loadTransfers = () => {
+            const tbody = val('sg-cash-transfer-rows');
+            if (!tbody || !SG_APP.cashTransfersEndpoint) return;
+            tbody.replaceChildren();
+            const loading = document.createElement('tr'); const loadingCell = document.createElement('td'); loadingCell.colSpan = 6; loadingCell.className = 'sg-table-empty'; loadingCell.textContent = 'Transfer kayıtları yükleniyor…'; loading.appendChild(loadingCell); tbody.appendChild(loading);
+            apiRequest(SG_APP.cashTransfersEndpoint).then(data => {
+                tbody.replaceChildren();
+                if (!data.items || !data.items.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 6; td.className = 'sg-table-empty'; td.textContent = 'Henüz hesaplar arası transfer kaydı bulunmuyor.'; tr.appendChild(td); tbody.appendChild(tr); return; }
+                data.items.forEach(item => {
+                    const tr = document.createElement('tr');
+                    const values = [formatDate(item.transaction_date), item.entry_no, item.from_account_name, item.to_account_name, money(item.amount), item.description || item.document_no || '—'];
+                    const labels = ['Tarih', 'İşlem No', 'Kaynak Hesap', 'Hedef Hesap', 'Tutar', 'Açıklama'];
+                    values.forEach((value, index) => { const td = document.createElement('td'); td.textContent = value || '—'; td.dataset.label = labels[index]; if (index === 4) td.className = 'sg-transfer-amount'; tr.appendChild(td); });
+                    tbody.appendChild(tr);
+                });
+            }).catch(error => { tbody.replaceChildren(); const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 6; td.className = 'sg-table-empty'; td.textContent = error.message; tr.appendChild(td); tbody.appendChild(tr); });
+        };
+        val('sg-transfer-add').addEventListener('click', () => {
+            if (!permissions.has('cash.transfer') || cashItems.length < 2) return;
+            val('sg-cash-transfer-form').reset(); val('sg-transfer-date').value = today(); val('sg-transfer-message').textContent = '';
+            fillSelect(val('sg-transfer-from'), cashItems, 'Kaynak hesap seçin'); fillSelect(val('sg-transfer-to'), cashItems, 'Hedef hesap seçin');
+            transferDialog.showModal();
+        });
+        val('sg-cash-transfer-close').addEventListener('click', () => transferDialog.close());
+        transferDialog.addEventListener('click', e => { if (e.target === transferDialog) transferDialog.close(); });
         val('sg-transfer-date').value = today();
         val('sg-cash-transfer-form').addEventListener('submit', e => {
             e.preventDefault(); if (!permissions.has('cash.transfer')) return;
+            if (!val('sg-transfer-from').value || !val('sg-transfer-to').value || val('sg-transfer-from').value === val('sg-transfer-to').value) { val('sg-transfer-message').textContent = 'Kaynak ve hedef hesap farklı olmalıdır.'; return; }
             const b = e.currentTarget.querySelector('button[type="submit"]'); b.disabled = true; val('sg-transfer-message').textContent = 'Transfer kaydediliyor…';
             const payload = { from_account_id: Number(val('sg-transfer-from').value), to_account_id: Number(val('sg-transfer-to').value), amount: val('sg-transfer-amount').value.trim().replace(',', '.'), transaction_date: val('sg-transfer-date').value, document_no: val('sg-transfer-document').value, description: val('sg-transfer-description').value };
-            apiRequest(SG_APP.cashTransfersEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify(payload) }).then(r => { val('sg-transfer-message').textContent = r.message; val('sg-transfer-amount').value = ''; load(); }).catch(err => { val('sg-transfer-message').textContent = err.message; }).finally(() => { b.disabled = false; });
+            apiRequest(SG_APP.cashTransfersEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify(payload) }).then(r => { val('sg-transfer-message').textContent = r.message; val('sg-cash-transfer-form').reset(); transferDialog.close(); load(); loadTransfers(); }).catch(err => { val('sg-transfer-message').textContent = err.message; }).finally(() => { b.disabled = false; });
         });
-        updatePartyOptions(); loadParties(); load();
+        updatePartyOptions(); loadParties(); load(); loadTransfers();
     };
 
     const setupIncomeExpenseModule = (permissions) => {
