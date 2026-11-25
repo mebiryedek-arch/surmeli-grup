@@ -83,6 +83,7 @@
     };
 
     const loadingOverlay = root.querySelector('#sg-loading-overlay');
+    if (loadingOverlay && document.body && loadingOverlay.parentNode !== document.body) document.body.appendChild(loadingOverlay);
     let pendingRequests = 0;
     let loadingTimer = null;
     const beginLoading = () => {
