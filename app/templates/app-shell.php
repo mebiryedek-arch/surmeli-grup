@@ -58,6 +58,8 @@ defined( 'ABSPATH' ) || exit;
                     <div class="sg-finance-note">Cari, kasa ve banka özetleri ilgili finans modülleri devreye alındığında gerçek muhasebe kayıtlarından gösterilecektir. Bu aşamada örnek bakiye gösterilmez.</div>
                 </aside>
             </section>
+
+            <section class="sg-panel sg-dashboard-calendar-panel"><div class="sg-calendar-head"><div><p class="sg-card-kicker">PLANLAMA</p><h2>Görev Takvimi</h2></div><div class="sg-calendar-head-actions"><button type="button" class="sg-button sg-button-light" id="sg-dashboard-calendar-prev">‹</button><strong id="sg-dashboard-calendar-title">Takvim</strong><button type="button" class="sg-button sg-button-light" id="sg-dashboard-calendar-next">›</button><a href="#jobs" class="sg-button sg-button-light">Tüm görevler</a></div></div><div class="sg-calendar-grid" id="sg-dashboard-calendar-grid"></div></section>
             <p class="sg-footnote">Veriler veritabanından anlık olarak okunur. Görebildiğiniz iş kayıtları kullanıcı yetkilerinizle sınırlandırılır.</p>
             </div>
             <section class="sg-section-view" data-section-view="customers" hidden>
