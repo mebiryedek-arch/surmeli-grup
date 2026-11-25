@@ -141,6 +141,29 @@ defined( 'ABSPATH' ) || exit;
                     </form>
                 </dialog>
             </section>
+
+            <section class="sg-section-view" data-section-view="personnel" hidden>
+                <div class="sg-module-heading"><div><p class="sg-eyebrow">ORGANİZASYON / PERSONEL</p><h1>Personel Takibi</h1><p>Personel iletişim, görev ve çalışma bilgilerini tek yerden yönetin.</p></div><button type="button" class="sg-button sg-button-primary" id="sg-personnel-add" data-permission="personnel.manage">+ Yeni Personel</button></div>
+                <div class="sg-customer-toolbar"><label class="sg-search-field"><span>Personel ara</span><input type="search" id="sg-personnel-search" placeholder="Ad, telefon, e-posta, görev veya departman"></label><label class="sg-filter-field"><span>Durum</span><select id="sg-personnel-status"><option value="">Tüm kayıtlar</option><option value="active">Aktif</option><option value="passive">Pasif</option></select></label><span class="sg-customer-count" id="sg-personnel-count">Kayıtlar yükleniyor…</span></div>
+                <div class="sg-panel sg-customer-list-panel"><div class="sg-table-wrap"><table class="sg-dashboard-table sg-customer-table"><thead><tr><th>Ad Soyad</th><th>Departman</th><th>Görev / Pozisyon</th><th>Telefon</th><th>E-posta</th><th>İşe Giriş</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="sg-personnel-rows"><tr><td colspan="8" class="sg-table-empty">Personel kayıtları yükleniyor…</td></tr></tbody></table></div></div>
+                <dialog class="sg-modal sg-customer-editor" id="sg-personnel-editor">
+                    <div class="sg-panel-heading"><div><p class="sg-card-kicker">PERSONEL KARTI</p><h2 id="sg-personnel-editor-title">Yeni Personel</h2></div><button type="button" class="sg-button sg-button-light" id="sg-personnel-cancel">Kapat</button></div>
+                    <form id="sg-personnel-form" class="sg-customer-form">
+                        <input type="hidden" id="sg-personnel-id" value="">
+                        <label class="sg-field-wide"><span>Ad soyad *</span><input id="sg-personnel-name" required maxlength="190"></label>
+                        <label><span>Telefon</span><input id="sg-personnel-phone" type="tel" maxlength="17" placeholder="0 (555) 555 55 55" inputmode="numeric"></label>
+                        <label><span>E-posta</span><input id="sg-personnel-email" type="email" maxlength="190"></label>
+                        <label><span>Departman</span><input id="sg-personnel-department" maxlength="120" placeholder="Örn. Operasyon"></label>
+                        <label><span>Görev / Pozisyon</span><input id="sg-personnel-title" maxlength="120" placeholder="Örn. Saha personeli"></label>
+                        <label><span>İşe giriş tarihi</span><input id="sg-personnel-date" type="date"></label>
+                        <label><span>Çalışma durumu</span><select id="sg-personnel-state"><option value="active">Aktif</option><option value="passive">Pasif</option></select></label>
+                        <label class="sg-field-wide"><span>Not / Açıklama</span><textarea id="sg-personnel-description" rows="3" maxlength="2000"></textarea></label>
+                        <div class="sg-form-actions"><p id="sg-personnel-message" role="status"></p><button type="submit" class="sg-button sg-button-primary" id="sg-personnel-save">Kaydet</button></div>
+                    </form>
+                </dialog>
+                <p class="sg-footnote">Pasif personel kayıtları silinmez; geçmiş iş atamalarının bağlantıları korunur.</p>
+            </section>
+
             <section class="sg-section-view" data-section-view="income-expense" hidden>
                 <div class="sg-module-heading"><div><p class="sg-eyebrow">FİNANS / GELİR GİDER</p><h1>Gelir ve Giderler</h1><p>Kaydettiğiniz gelir ve giderler seçilen kasa veya banka hesabına otomatik işlenir.</p></div></div>
                 <div class="sg-dashboard-grid"><article class="sg-dashboard-card"><span class="sg-dashboard-label">Toplam Gelir</span><strong id="sg-ie-income-total">₺0,00</strong><small>kayıtlı gelirler</small></article><article class="sg-dashboard-card"><span class="sg-dashboard-label">Toplam Gider</span><strong id="sg-ie-expense-total">₺0,00</strong><small>kayıtlı giderler</small></article><article class="sg-dashboard-card"><span class="sg-dashboard-label">Net Durum</span><strong id="sg-ie-net-total">₺0,00</strong><small>gelir eksi gider</small></article></div>
