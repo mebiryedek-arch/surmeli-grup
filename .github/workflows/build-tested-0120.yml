@@ -21,7 +21,7 @@ jobs:
         run: |
           test -f surmeli-grup.php
           grep -q "Version: 0.12.1" surmeli-grup.php
-          grep -q "SG_DB_VERSION', '1.6.0'" surmeli-grup.php
+          grep -q "SG_DB_VERSION', '1.7.0'" surmeli-grup.php
           test -f database/migrations/007-job-tracking.php
           test -f database/migrations/008-personnel-tracking.php
           test -f modules/personnel/class-personnel.php
@@ -37,11 +37,11 @@ jobs:
           git archive HEAD | tar -x -C dist/surmeli-grup
           cd dist
           zip -qr surmeli-grup-0.12.1.zip surmeli-grup
-          unzip -t surmeli-grup-0.12.0.zip
-          unzip -l surmeli-grup-0.12.0.zip | grep -E 'surmeli-grup/(surmeli-grup.php|database/migrations/007-job-tracking.php)$'
+          unzip -t surmeli-grup-0.12.1.zip
+          unzip -l surmeli-grup-0.12.1.zip | grep -E 'surmeli-grup/(surmeli-grup.php|database/migrations/008-personnel-tracking.php|modules/personnel/class-personnel.php)$'
       - uses: actions/upload-artifact@v4
         with:
           name: surmeli-grup-0.12.1-php81-tested
-          path: dist/surmeli-grup-0.12.0.zip
+          path: dist/surmeli-grup-0.12.1.zip
           if-no-files-found: error
           retention-days: 30
