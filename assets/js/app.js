@@ -1,0 +1,478 @@
+(() => {
+    'use strict';
+    const root = document.getElementById('sg-app-root');
+    if (!root) return;
+
+    const toggle = root.querySelector('.sg-menu-toggle');
+    const sidebar = root.querySelector('.sg-sidebar');
+    const userName = root.querySelector('#sg-user-name');
+    const sessionState = root.querySelector('#sg-session-state');
+    const apiState = root.querySelector('#sg-api-state');
+
+    const dashboardBody = root.querySelector('#sg-recent-jobs');
+    const dashboardUpdated = root.querySelector('#sg-dashboard-updated');
+    const customerRows = root.querySelector('#sg-customer-rows');
+    const supplierRows = root.querySelector('#sg-supplier-rows');
+    let customerItems = [];
+    let supplierItems = [];
+    let supplierSearchTimer = null;
+    let customerSearchTimer = null;
+
+    const statusLabels = {
+        new: 'Yeni', assigned: 'Atandı', in_progress: 'Devam ediyor',
+        on_hold: 'Beklemede', completed: 'Tamamlandı', cancelled: 'İptal edildi'
+    };
+
+    const formatDate = (value) => {
+        if (!value || value === '0000-00-00 00:00:00') return '—';
+        const date = new Date(String(value).replace(' ', 'T'));
+        if (Number.isNaN(date.getTime())) return '—';
+        return new Intl.DateTimeFormat('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+    };
+
+    const loadDashboard = () => {
+        if (!SG_APP.dashboardEndpoint) return;
+        fetch(SG_APP.dashboardEndpoint, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: { 'X-WP-Nonce': SG_APP.nonce, 'Accept': 'application/json' }
+        }).then((response) => {
+            if (!response.ok) throw new Error('Dashboard verileri alınamadı');
+            return response.json();
+        }).then((data) => {
+            ['customers', 'suppliers', 'jobs_total', 'jobs_open', 'jobs_overdue', 'jobs_completed'].forEach((key) => {
+                const target = root.querySelector('[data-stat="' + key + '"]');
+                if (target) target.textContent = new Intl.NumberFormat('tr-TR').format(Number(data[key] || 0));
+            });
+            if (dashboardBody) {
+                dashboardBody.replaceChildren();
+                if (!Array.isArray(data.recent_jobs) || !data.recent_jobs.length) {
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.colSpan = 4;
+                    cell.className = 'sg-table-empty';
+                    cell.textContent = 'Henüz iş kaydı bulunmuyor.';
+                    row.appendChild(cell);
+                    dashboardBody.appendChild(row);
+                } else {
+                    data.recent_jobs.forEach((job) => {
+                        const row = document.createElement('tr');
+                        [job.job_no, job.title, statusLabels[job.status] || job.status, formatDate(job.due_date)].forEach((value, index) => {
+                            const cell = document.createElement('td');
+                            cell.textContent = value || '—';
+                            if (index === 2) cell.className = 'sg-job-status sg-job-status-' + String(job.status).replace(/[^a-z_]/g, '');
+                            row.appendChild(cell);
+                        });
+                        dashboardBody.appendChild(row);
+                    });
+                }
+            }
+            if (dashboardUpdated) dashboardUpdated.textContent = 'Son güncelleme: ' + formatDate(data.generated_at);
+        }).catch(() => {
+            if (dashboardBody) {
+                dashboardBody.replaceChildren();
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = 4;
+                cell.className = 'sg-table-empty';
+                cell.textContent = 'Dashboard verileri şu anda alınamıyor.';
+                row.appendChild(cell);
+                dashboardBody.appendChild(row);
+            }
+        });
+    };
+
+    const apiRequest = (url, options = {}) => fetch(url, {
+        credentials: 'same-origin',
+        ...options,
+        headers: { 'X-WP-Nonce': SG_APP.nonce, 'Accept': 'application/json', ...(options.headers || {}) }
+    }).then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.message || 'İşlem tamamlanamadı.');
+        return data;
+    });
+
+    const setupNavigation = (permissions) => {
+        const activate = () => {
+            let section = (window.location.hash || '#dashboard').slice(1);
+            if (section === 'customers' && !permissions.has('customers.view')) section = 'dashboard';
+            if (section === 'suppliers' && !permissions.has('suppliers.view')) section = 'dashboard';
+            if (section === 'accounts' && !permissions.has('accounts.view')) section = 'dashboard';
+            if (section === 'cash-bank' && !permissions.has('cash.view')) section = 'dashboard';
+            if (section === 'income-expense' && !permissions.has('income_expense.view')) section = 'dashboard';
+            root.querySelectorAll('[data-section-view]').forEach((view) => { view.hidden = view.dataset.sectionView !== section; });
+            root.querySelectorAll('.sg-sidebar [data-section]').forEach((link) => link.classList.toggle('is-active', link.dataset.section === section));
+            const heading = root.querySelector('.sg-page-heading');
+            if (heading) heading.hidden = section !== 'dashboard';
+        };
+        root.querySelectorAll('.sg-sidebar [data-section]').forEach((link) => link.addEventListener('click', () => { window.location.hash = link.dataset.section; }));
+        window.addEventListener('hashchange', activate);
+        activate();
+    };
+
+    const formatTurkishPhone = (value) => {
+        let digits = String(value || '').replace(/\D/g, '').slice(0, 11);
+        if (digits.length && digits[0] !== '0') digits = ('0' + digits).slice(0, 11);
+        if (!digits) return '';
+        let out = digits.slice(0, 1);
+        if (digits.length > 1) out += ' (' + digits.slice(1, 4);
+        if (digits.length >= 4) out += ')';
+        if (digits.length > 4) out += ' ' + digits.slice(4, 7);
+        if (digits.length > 7) out += ' ' + digits.slice(7, 9);
+        if (digits.length > 9) out += ' ' + digits.slice(9, 11);
+        return out;
+    };
+
+    const setupCustomerModule = (permissions) => {
+        if (!customerRows || !SG_APP.customersEndpoint || !permissions.has('customers.view')) return;
+        const editor = root.querySelector('#sg-customer-editor');
+        const form = root.querySelector('#sg-customer-form');
+        const message = root.querySelector('#sg-customer-message');
+        const phoneField = root.querySelector('#sg-customer-phone');
+        phoneField.addEventListener('input', () => { phoneField.value = formatTurkishPhone(phoneField.value); });
+        editor.addEventListener('click', (event) => { if (event.target === editor) editor.close(); });
+        const fields = {
+            party_kind: 'sg-customer-kind', company_name: 'sg-customer-company', contact_name: 'sg-customer-contact',
+            phone: 'sg-customer-phone', email: 'sg-customer-email', tax_office: 'sg-customer-tax-office',
+            tax_number: 'sg-customer-tax-number', status: 'sg-customer-state', address: 'sg-customer-address', description: 'sg-customer-description'
+        };
+        const val = (id) => root.querySelector('#' + id);
+        const load = () => {
+            const params = new URLSearchParams();
+            if (val('sg-customer-search').value.trim()) params.set('search', val('sg-customer-search').value.trim());
+            if (val('sg-customer-status').value) params.set('status', val('sg-customer-status').value);
+            customerRows.innerHTML = '<tr><td colspan="7" class="sg-table-empty">Müşteriler yükleniyor…</td></tr>';
+            apiRequest(SG_APP.customersEndpoint + (params.toString() ? '?' + params.toString() : '')).then((data) => {
+                customerItems = Array.isArray(data.items) ? data.items : [];
+                val('sg-customer-count').textContent = customerItems.length + ' müşteri kaydı';
+                customerRows.replaceChildren();
+                if (!customerItems.length) {
+                    const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 7; td.className = 'sg-table-empty'; td.textContent = 'Aramanızla eşleşen müşteri bulunamadı.'; tr.appendChild(td); customerRows.appendChild(tr); return;
+                }
+                customerItems.forEach((customer) => {
+                    const tr = document.createElement('tr');
+                    [customer.party_code, customer.company_name, customer.contact_name, customer.phone ? formatTurkishPhone(customer.phone) : '', customer.email].forEach((value) => { const td = document.createElement('td'); td.textContent = value || '—'; tr.appendChild(td); });
+                    const status = document.createElement('td'); status.textContent = customer.status === 'active' ? 'Aktif' : 'Pasif'; status.className = customer.status === 'active' ? 'sg-customer-active' : 'sg-customer-passive'; tr.appendChild(status);
+                    const actions = document.createElement('td'); actions.className = 'sg-customer-actions';
+                    const view = document.createElement('button'); view.type = 'button'; view.className = 'sg-button sg-button-small sg-button-light'; view.textContent = 'Detay'; view.addEventListener('click', () => openCustomer(customer.id, true)); actions.appendChild(view);
+                    if (permissions.has('customers.edit')) { const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'sg-button sg-button-small sg-button-light'; edit.textContent = 'Düzenle'; edit.addEventListener('click', () => openCustomer(customer.id, false)); actions.appendChild(edit); }
+                    tr.appendChild(actions); customerRows.appendChild(tr);
+                });
+            }).catch((error) => { customerRows.replaceChildren(); const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 7; td.className = 'sg-table-empty'; td.textContent = error.message; tr.appendChild(td); customerRows.appendChild(tr); });
+        };
+        const openCustomer = (id, readOnly) => apiRequest(SG_APP.customersEndpoint + '/' + id).then((customer) => {
+            val('sg-customer-id').value = customer.id;
+            Object.entries(fields).forEach(([key, fieldId]) => { val(fieldId).value = key === 'phone' && customer[key] ? formatTurkishPhone(customer[key]) : (customer[key] || (key === 'status' ? 'active' : '')); val(fieldId).disabled = readOnly; });
+            val('sg-customer-editor-title').textContent = readOnly ? 'Müşteri Detayı' : 'Müşteri Düzenle';
+            val('sg-customer-save').hidden = readOnly;
+            message.textContent = readOnly ? 'Müşteri bilgileri görüntüleniyor.' : '';
+            if (!editor.open) editor.showModal();
+        }).catch((error) => { window.alert(error.message); });
+        const resetEditor = () => {
+            form.reset(); val('sg-customer-id').value = ''; Object.values(fields).forEach((id) => { val(id).disabled = false; });
+            val('sg-customer-editor-title').textContent = 'Yeni Müşteri'; val('sg-customer-save').hidden = false; message.textContent = ''; if (editor.open) editor.close();
+        };
+        if (permissions.has('customers.create')) root.querySelector('#sg-customer-add').addEventListener('click', () => { resetEditor(); if (!editor.open) editor.showModal(); });
+        root.querySelector('#sg-customer-cancel').addEventListener('click', resetEditor);
+        root.querySelector('#sg-customer-search').addEventListener('input', () => { clearTimeout(customerSearchTimer); customerSearchTimer = setTimeout(load, 250); });
+        root.querySelector('#sg-customer-status').addEventListener('change', load);
+        form.addEventListener('submit', (event) => {
+            event.preventDefault(); if (!permissions.has(val('sg-customer-id').value ? 'customers.edit' : 'customers.create')) return;
+            const payload = {}; Object.entries(fields).forEach(([key, fieldId]) => { payload[key] = val(fieldId).value; });
+            const id = val('sg-customer-id').value;
+            val('sg-customer-save').disabled = true; message.textContent = 'Kaydediliyor…';
+            apiRequest(id ? SG_APP.customersEndpoint + '/' + id : SG_APP.customersEndpoint, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((result) => {
+                message.textContent = result.message || 'Kaydedildi.'; load();
+                window.setTimeout(resetEditor, 900);
+            }).catch((error) => { message.textContent = error.message; }).finally(() => { val('sg-customer-save').disabled = false; });
+        });
+        load();
+    };
+
+
+    const setupSupplierModule = (permissions) => {
+        if (!supplierRows || !SG_APP.suppliersEndpoint || !permissions.has('suppliers.view')) return;
+        const editor = root.querySelector('#sg-supplier-editor');
+        const form = root.querySelector('#sg-supplier-form');
+        const message = root.querySelector('#sg-supplier-message');
+        const phoneField = root.querySelector('#sg-supplier-phone');
+        phoneField.addEventListener('input', () => { phoneField.value = formatTurkishPhone(phoneField.value); });
+        editor.addEventListener('click', (event) => { if (event.target === editor) editor.close(); });
+        const fields = {
+            party_kind: 'sg-supplier-kind', company_name: 'sg-supplier-company', contact_name: 'sg-supplier-contact',
+            phone: 'sg-supplier-phone', email: 'sg-supplier-email', tax_office: 'sg-supplier-tax-office',
+            tax_number: 'sg-supplier-tax-number', status: 'sg-supplier-state', address: 'sg-supplier-address', description: 'sg-supplier-description'
+        };
+        const val = (id) => root.querySelector('#' + id);
+        const load = () => {
+            const params = new URLSearchParams();
+            if (val('sg-supplier-search').value.trim()) params.set('search', val('sg-supplier-search').value.trim());
+            if (val('sg-supplier-status').value) params.set('status', val('sg-supplier-status').value);
+            supplierRows.innerHTML = '<tr><td colspan="7" class="sg-table-empty">Tedarikçiler yükleniyor…</td></tr>';
+            apiRequest(SG_APP.suppliersEndpoint + (params.toString() ? '?' + params.toString() : '')).then((data) => {
+                supplierItems = Array.isArray(data.items) ? data.items : [];
+                val('sg-supplier-count').textContent = supplierItems.length + ' tedarikçi kaydı';
+                supplierRows.replaceChildren();
+                if (!supplierItems.length) {
+                    const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 7; td.className = 'sg-table-empty'; td.textContent = 'Aramanızla eşleşen tedarikçi bulunamadı.'; tr.appendChild(td); supplierRows.appendChild(tr); return;
+                }
+                supplierItems.forEach((supplier) => {
+                    const tr = document.createElement('tr');
+                    [supplier.party_code, supplier.company_name, supplier.contact_name, supplier.phone ? formatTurkishPhone(supplier.phone) : '', supplier.email].forEach((value) => { const td = document.createElement('td'); td.textContent = value || '—'; tr.appendChild(td); });
+                    const status = document.createElement('td'); status.textContent = supplier.status === 'active' ? 'Aktif' : 'Pasif'; status.className = supplier.status === 'active' ? 'sg-supplier-active' : 'sg-supplier-passive'; tr.appendChild(status);
+                    const actions = document.createElement('td'); actions.className = 'sg-supplier-actions';
+                    const view = document.createElement('button'); view.type = 'button'; view.className = 'sg-button sg-button-small sg-button-light'; view.textContent = 'Detay'; view.addEventListener('click', () => openSupplier(supplier.id, true)); actions.appendChild(view);
+                    if (permissions.has('suppliers.edit')) { const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'sg-button sg-button-small sg-button-light'; edit.textContent = 'Düzenle'; edit.addEventListener('click', () => openSupplier(supplier.id, false)); actions.appendChild(edit); }
+                    tr.appendChild(actions); supplierRows.appendChild(tr);
+                });
+            }).catch((error) => { supplierRows.replaceChildren(); const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 7; td.className = 'sg-table-empty'; td.textContent = error.message; tr.appendChild(td); supplierRows.appendChild(tr); });
+        };
+        const openSupplier = (id, readOnly) => apiRequest(SG_APP.suppliersEndpoint + '/' + id).then((supplier) => {
+            val('sg-supplier-id').value = supplier.id;
+            Object.entries(fields).forEach(([key, fieldId]) => { val(fieldId).value = key === 'phone' && supplier[key] ? formatTurkishPhone(supplier[key]) : (supplier[key] || (key === 'status' ? 'active' : '')); val(fieldId).disabled = readOnly; });
+            val('sg-supplier-editor-title').textContent = readOnly ? 'Tedarikçi Detayı' : 'Tedarikçi Düzenle';
+            val('sg-supplier-save').hidden = readOnly;
+            message.textContent = readOnly ? 'Tedarikçi bilgileri görüntüleniyor.' : '';
+            if (!editor.open) editor.showModal();
+        }).catch((error) => { window.alert(error.message); });
+        const resetEditor = () => {
+            form.reset(); val('sg-supplier-id').value = ''; Object.values(fields).forEach((id) => { val(id).disabled = false; });
+            val('sg-supplier-editor-title').textContent = 'Yeni Tedarikçi'; val('sg-supplier-save').hidden = false; message.textContent = ''; if (editor.open) editor.close();
+        };
+        if (permissions.has('suppliers.create')) root.querySelector('#sg-supplier-add').addEventListener('click', () => { resetEditor(); if (!editor.open) editor.showModal(); });
+        root.querySelector('#sg-supplier-cancel').addEventListener('click', resetEditor);
+        root.querySelector('#sg-supplier-search').addEventListener('input', () => { clearTimeout(supplierSearchTimer); supplierSearchTimer = setTimeout(load, 250); });
+        root.querySelector('#sg-supplier-status').addEventListener('change', load);
+        form.addEventListener('submit', (event) => {
+            event.preventDefault(); if (!permissions.has(val('sg-supplier-id').value ? 'suppliers.edit' : 'suppliers.create')) return;
+            const payload = {}; Object.entries(fields).forEach(([key, fieldId]) => { payload[key] = val(fieldId).value; });
+            const id = val('sg-supplier-id').value;
+            val('sg-supplier-save').disabled = true; message.textContent = 'Kaydediliyor…';
+            apiRequest(id ? SG_APP.suppliersEndpoint + '/' + id : SG_APP.suppliersEndpoint, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((result) => {
+                message.textContent = result.message || 'Kaydedildi.'; load();
+                window.setTimeout(resetEditor, 900);
+            }).catch((error) => { message.textContent = error.message; }).finally(() => { val('sg-supplier-save').disabled = false; });
+        });
+        load();
+    };
+
+    const setupAccountsModule = (permissions) => {
+        if (!permissions.has('accounts.view') || !SG_APP.accountsEndpoint) return;
+        const val = (id) => root.querySelector('#' + id);
+        const rows = root.querySelector('#sg-account-rows');
+        const dialog = root.querySelector('#sg-account-dialog');
+        const tbody = root.querySelector('#sg-account-movements');
+        const money = (v) => new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY'}).format(Number(v||0));
+        const load = () => {
+            const params = new URLSearchParams();
+            const q = val('sg-account-search').value.trim(); const type = val('sg-account-type').value;
+            if(q) params.set('search',q); if(type) params.set('type',type);
+            apiRequest(SG_APP.accountsEndpoint + (params.toString()?'?'+params.toString():'' )).then(data=>{
+                rows.replaceChildren(); val('sg-account-count').textContent=(data.count||0)+' cari';
+                if(!data.items || !data.items.length){ const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=7; td.className='sg-table-empty'; td.textContent='Cari kayıt bulunamadı.'; tr.appendChild(td); rows.appendChild(tr); return; }
+                data.items.forEach(item=>{ const tr=document.createElement('tr');
+                    [item.party_code,item.company_name,item.party_type==='customer'?'Müşteri':'Tedarikçi',money(item.total_debit),money(item.total_credit),money(item.balance)].forEach((v,i)=>{const td=document.createElement('td');td.textContent=v||'—';if(i===5)td.className='sg-account-balance';tr.appendChild(td);});
+                    const td=document.createElement('td');const btn=document.createElement('button');btn.type='button';btn.className='sg-button sg-button-light';btn.textContent='Hesabı Aç';btn.addEventListener('click',()=>openParty(item));td.appendChild(btn);tr.appendChild(td);rows.appendChild(tr);
+                });
+            }).catch(e=>{rows.textContent=e.message;});
+        };
+        const openParty = (item) => {
+            val('sg-account-party-id').value=item.party_id; val('sg-account-party-title').textContent=item.company_name+' · '+item.party_code;
+            val('sg-account-summary').textContent='Toplam borç: '+money(item.total_debit)+' | Toplam alacak: '+money(item.total_credit)+' | Bakiye: '+money(item.balance);
+            val('sg-account-date').value=new Date().toISOString().slice(0,10); val('sg-account-message').textContent='';
+            const save=val('sg-account-save'); save.hidden=!permissions.has('accounts.adjust');
+            if(!dialog.open)dialog.showModal();
+            apiRequest(SG_APP.accountsEndpoint+'/'+item.party_id+'/movements').then(data=>{tbody.replaceChildren();
+                if(!data.items.length){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=5;td.className='sg-table-empty';td.textContent='Henüz cari hareket yok.';tr.appendChild(td);tbody.appendChild(tr);return;}
+                data.items.forEach(m=>{const tr=document.createElement('tr');[formatDate(m.entry_date),m.entry_no,m.description||m.entry_type,money(m.debit),money(m.credit)].forEach(v=>{const td=document.createElement('td');td.textContent=v||'—';tr.appendChild(td);});tbody.appendChild(tr);});
+            }).catch(e=>{tbody.textContent=e.message;});
+        };
+        val('sg-account-close').addEventListener('click',()=>dialog.close());
+        dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
+        let timer; val('sg-account-search').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(load,250);});val('sg-account-type').addEventListener('change',load);
+        val('sg-account-movement-form').addEventListener('submit',e=>{
+            e.preventDefault(); if(!permissions.has('accounts.adjust'))return;
+            const payload={party_id:Number(val('sg-account-party-id').value),movement_type:val('sg-account-movement-type').value,amount:val('sg-account-amount').value.trim().replace(',','.'),entry_date:val('sg-account-date').value,document_no:val('sg-account-document').value,description:val('sg-account-description').value};
+            val('sg-account-save').disabled=true;val('sg-account-message').textContent='Kaydediliyor…';
+            apiRequest(SG_APP.accountsEndpoint,{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':crypto.randomUUID()},body:JSON.stringify(payload)}).then(result=>{val('sg-account-message').textContent=result.message;val('sg-account-amount').value='';val('sg-account-description').value='';load();
+                apiRequest(SG_APP.accountsEndpoint+'/'+payload.party_id+'/movements').then(data=>{tbody.replaceChildren();data.items.forEach(m=>{const tr=document.createElement('tr');[formatDate(m.entry_date),m.entry_no,m.description||m.entry_type,money(m.debit),money(m.credit)].forEach(v=>{const td=document.createElement('td');td.textContent=v||'—';tr.appendChild(td);});tbody.appendChild(tr);});});
+            }).catch(err=>val('sg-account-message').textContent=err.message).finally(()=>val('sg-account-save').disabled=false);
+        });
+        load();
+    };
+
+    const setupCashBankModule = (permissions) => {
+        if (!permissions.has('cash.view') || !SG_APP.cashAccountsEndpoint) return;
+        const val = (id) => root.querySelector('#' + id);
+        const cards = val('sg-cash-cards');
+        const accountDialog = val('sg-cash-account-dialog');
+        const detailDialog = val('sg-cash-detail-dialog');
+        const money = (v) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(Number(v || 0));
+        let cashItems = [];
+        let partyItems = [];
+        let activeCash = null;
+        const today = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+        const fillSelect = (select, items, placeholder) => {
+            select.replaceChildren();
+            const first = document.createElement('option'); first.value = ''; first.textContent = placeholder; select.appendChild(first);
+            items.forEach(item => { const o = document.createElement('option'); o.value = item.id; o.textContent = item.account_name + ' · ' + money(item.balance); select.appendChild(o); });
+        };
+        const load = () => apiRequest(SG_APP.cashAccountsEndpoint).then(data => {
+            cashItems = data.items || []; cards.replaceChildren();
+            if (!cashItems.length) { const p = document.createElement('div'); p.className = 'sg-panel sg-cash-empty'; p.textContent = 'Henüz kasa veya banka hesabı oluşturulmadı. İlk hesabınızı ekleyerek başlayın.'; cards.appendChild(p); }
+            cashItems.forEach(item => {
+                const card = document.createElement('article'); card.className = 'sg-cash-card';
+                const top = document.createElement('div'); top.className = 'sg-cash-card-top';
+                const type = document.createElement('span'); type.className = 'sg-cash-type'; type.textContent = item.account_kind === 'bank' ? 'BANKA' : 'KASA';
+                const code = document.createElement('small'); code.textContent = item.account_code;
+                top.append(type, code);
+                const name = document.createElement('h2'); name.textContent = item.account_name;
+                const bank = document.createElement('p'); bank.textContent = item.bank_name || (item.iban ? item.iban : (item.account_kind === 'cash' ? 'Nakit hesabı' : 'Banka hesabı'));
+                const balance = document.createElement('strong'); balance.textContent = money(item.balance);
+                const label = document.createElement('small'); label.textContent = 'Güncel bakiye';
+                const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'sg-button sg-button-light'; btn.textContent = 'Hesap Detayı / İşlem'; btn.addEventListener('click', () => openDetail(item));
+                card.append(top, name, bank, label, balance, btn); cards.appendChild(card);
+            });
+            fillSelect(val('sg-transfer-from'), cashItems, 'Kaynak hesap seçin'); fillSelect(val('sg-transfer-to'), cashItems, 'Hedef hesap seçin');
+        }).catch(e => { cards.textContent = e.message; });
+        const loadParties = () => { if (!permissions.has('cash.create') || !SG_APP.cashPartiesEndpoint) return; apiRequest(SG_APP.cashPartiesEndpoint).then(d => { partyItems = d.items || []; updatePartyOptions(); }).catch(() => {}); };
+        const updatePartyOptions = () => {
+            const type = val('sg-cash-transaction-type').value;
+            const wanted = type === 'collection' ? 'customer' : 'supplier';
+            const select = val('sg-cash-party'); select.replaceChildren();
+            const first = document.createElement('option'); first.value = ''; first.textContent = type === 'collection' ? 'Müşteri seçin' : 'Tedarikçi seçin'; select.appendChild(first);
+            partyItems.filter(p => p.party_type === wanted).forEach(p => { const o = document.createElement('option'); o.value = p.party_id; o.textContent = p.company_name + ' · ' + p.party_code; select.appendChild(o); });
+            select.disabled = !['collection', 'payment'].includes(type);
+            if (select.disabled) { const o = document.createElement('option'); o.value = ''; o.textContent = 'Bu işlem için cari seçilmez'; select.appendChild(o); }
+        };
+        const openDetail = (item) => {
+            activeCash = item; val('sg-cash-detail-title').textContent = item.account_name + ' · ' + item.account_code;
+            val('sg-cash-detail-summary').textContent = 'Güncel bakiye: ' + money(item.balance);
+            val('sg-cash-transaction-date').value = today(); val('sg-cash-transaction-message').textContent = '';
+            val('sg-cash-transaction-form').querySelector('button[type="submit"]').hidden = !permissions.has('cash.create');
+            if (!detailDialog.open) detailDialog.showModal();
+            apiRequest(SG_APP.cashAccountsEndpoint + '/' + item.id + '/transactions').then(data => {
+                const tbody = val('sg-cash-transactions'); tbody.replaceChildren();
+                if (!data.items.length) { const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 5; td.className = 'sg-table-empty'; td.textContent = 'Henüz hareket bulunmuyor.'; tr.appendChild(td); tbody.appendChild(tr); return; }
+                data.items.forEach(m => { const tr = document.createElement('tr'); [formatDate(m.transaction_date), m.entry_no, (m.company_name ? m.company_name + ' · ' : '') + (m.description || m.entry_type), m.direction === 'in' ? money(m.amount) : '—', m.direction === 'out' ? money(m.amount) : '—'].forEach(v => { const td = document.createElement('td'); td.textContent = v || '—'; tr.appendChild(td); }); tbody.appendChild(tr); });
+            }).catch(e => { val('sg-cash-transactions').textContent = e.message; });
+        };
+        val('sg-cash-add').addEventListener('click', () => { val('sg-cash-account-form').reset(); val('sg-cash-account-message').textContent = ''; val('sg-cash-opening-date').value = today(); accountDialog.showModal(); });
+        val('sg-cash-account-close').addEventListener('click', () => accountDialog.close());
+        val('sg-cash-detail-close').addEventListener('click', () => detailDialog.close());
+        [accountDialog, detailDialog].forEach(d => d.addEventListener('click', e => { if (e.target === d) d.close(); }));
+        val('sg-cash-kind').addEventListener('change', () => { const bank = val('sg-cash-kind').value === 'bank'; val('sg-cash-bank').disabled = !bank; val('sg-cash-iban').disabled = !bank; });
+        val('sg-cash-account-form').addEventListener('submit', e => {
+            e.preventDefault(); const b = e.currentTarget.querySelector('button[type="submit"]'); b.disabled = true; val('sg-cash-account-message').textContent = 'Kaydediliyor…';
+            const payload = { account_kind: val('sg-cash-kind').value, account_name: val('sg-cash-name').value.trim(), bank_name: val('sg-cash-bank').value.trim(), iban: val('sg-cash-iban').value.trim(), opening_balance: val('sg-cash-opening').value.trim().replace(',', '.'), opening_date: val('sg-cash-opening-date').value };
+            apiRequest(SG_APP.cashAccountsEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify(payload) }).then(r => { val('sg-cash-account-message').textContent = r.message; load(); window.setTimeout(() => accountDialog.close(), 700); }).catch(err => { val('sg-cash-account-message').textContent = err.message; }).finally(() => { b.disabled = false; });
+        });
+        val('sg-cash-kind').dispatchEvent(new Event('change'));
+        val('sg-cash-transaction-type').addEventListener('change', updatePartyOptions);
+        val('sg-cash-transaction-form').addEventListener('submit', e => {
+            e.preventDefault(); if (!activeCash || !permissions.has('cash.create')) return;
+            const b = e.currentTarget.querySelector('button[type="submit"]'); b.disabled = true; val('sg-cash-transaction-message').textContent = 'Kaydediliyor…';
+            const payload = { transaction_type: val('sg-cash-transaction-type').value, party_id: Number(val('sg-cash-party').value || 0), amount: val('sg-cash-transaction-amount').value.trim().replace(',', '.'), transaction_date: val('sg-cash-transaction-date').value, document_no: val('sg-cash-transaction-document').value, description: val('sg-cash-transaction-description').value };
+            apiRequest(SG_APP.cashAccountsEndpoint + '/' + activeCash.id + '/transactions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify(payload) }).then(r => { val('sg-cash-transaction-message').textContent = r.message; val('sg-cash-transaction-amount').value = ''; val('sg-cash-transaction-description').value = ''; load().then(() => { const fresh = cashItems.find(x => Number(x.id) === Number(activeCash.id)); if (fresh) openDetail(fresh); }); }).catch(err => { val('sg-cash-transaction-message').textContent = err.message; }).finally(() => { b.disabled = false; });
+        });
+        val('sg-transfer-date').value = today();
+        val('sg-cash-transfer-form').addEventListener('submit', e => {
+            e.preventDefault(); if (!permissions.has('cash.transfer')) return;
+            const b = e.currentTarget.querySelector('button[type="submit"]'); b.disabled = true; val('sg-transfer-message').textContent = 'Transfer kaydediliyor…';
+            const payload = { from_account_id: Number(val('sg-transfer-from').value), to_account_id: Number(val('sg-transfer-to').value), amount: val('sg-transfer-amount').value.trim().replace(',', '.'), transaction_date: val('sg-transfer-date').value, document_no: val('sg-transfer-document').value, description: val('sg-transfer-description').value };
+            apiRequest(SG_APP.cashTransfersEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() }, body: JSON.stringify(payload) }).then(r => { val('sg-transfer-message').textContent = r.message; val('sg-transfer-amount').value = ''; load(); }).catch(err => { val('sg-transfer-message').textContent = err.message; }).finally(() => { b.disabled = false; });
+        });
+        updatePartyOptions(); loadParties(); load();
+    };
+
+    const setupIncomeExpenseModule = (permissions) => {
+        const val = (id) => root.querySelector('#' + id);
+        const today = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+        const form = val('sg-ie-form');
+        if (!form || !SG_APP.incomeExpensesEndpoint || !permissions.has('income_expense.view')) return;
+        const money = (v) => new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY'}).format(Number(v||0));
+        const loadOptions = () => apiRequest(SG_APP.incomeExpenseOptionsEndpoint).then(data => {
+            const cat=val('sg-ie-category'), cash=val('sg-ie-cash'), type=val('sg-ie-type').value;
+            const selected=cat.value; cat.replaceChildren();
+            (data.categories||[]).filter(x=>x.category_type===type).forEach(x=>{const o=document.createElement('option');o.value=x.id;o.textContent=x.category_name;cat.appendChild(o);});
+            if(selected)cat.value=selected;
+            const old=cash.value;cash.replaceChildren();(data.accounts||[]).forEach(x=>{const o=document.createElement('option');o.value=x.id;o.textContent=(x.account_kind==='bank'?'Banka · ':'Kasa · ')+x.account_name;cash.appendChild(o);});if(old)cash.value=old;
+        });
+        const load = () => apiRequest(SG_APP.incomeExpensesEndpoint + (val('sg-ie-filter').value?'?type='+encodeURIComponent(val('sg-ie-filter').value):'')).then(data=>{
+            const t=data.totals||{};val('sg-ie-income-total').textContent=money(t.income_total);val('sg-ie-expense-total').textContent=money(t.expense_total);val('sg-ie-net-total').textContent=money(Number(t.income_total||0)-Number(t.expense_total||0));
+            const body=val('sg-ie-rows');body.replaceChildren();if(!(data.items||[]).length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=7;td.className='sg-table-empty';td.textContent='Henüz gelir veya gider kaydı yok.';tr.appendChild(td);body.appendChild(tr);return;}
+            data.items.forEach(x=>{const tr=document.createElement('tr');[formatDate(x.record_date),x.record_type==='income'?'Gelir':'Gider',x.category_name,x.account_name,x.description||'—',money(x.amount),x.entry_no].forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;if(i===5)td.className=x.record_type==='income'?'sg-job-status sg-job-status-completed':'sg-job-status sg-job-status-cancelled';tr.appendChild(td);});body.appendChild(tr);});
+        }).catch(e=>{val('sg-ie-rows').textContent=e.message;});
+        val('sg-ie-type').addEventListener('change',loadOptions);val('sg-ie-filter').addEventListener('change',load);
+        val('sg-ie-date').value=today();
+        form.addEventListener('submit',e=>{e.preventDefault();if(!permissions.has('income_expense.create'))return;const b=form.querySelector('button[type="submit"]');b.disabled=true;val('sg-ie-message').textContent='Kaydediliyor…';const payload={record_type:val('sg-ie-type').value,category_id:Number(val('sg-ie-category').value),cash_account_id:Number(val('sg-ie-cash').value),amount:val('sg-ie-amount').value.trim().replace(',','.'),record_date:val('sg-ie-date').value,document_no:val('sg-ie-document').value,description:val('sg-ie-description').value};apiRequest(SG_APP.incomeExpensesEndpoint,{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':crypto.randomUUID()},body:JSON.stringify(payload)}).then(r=>{val('sg-ie-message').textContent=r.message;val('sg-ie-amount').value='';val('sg-ie-document').value='';val('sg-ie-description').value='';load();}).catch(err=>{val('sg-ie-message').textContent=err.message;}).finally(()=>{b.disabled=false;});});
+        loadOptions().then(load).catch(e=>{val('sg-ie-message').textContent=e.message;});
+    };
+
+    const closeMenu = () => {
+        if (!sidebar || !toggle) return;
+        sidebar.classList.remove('is-open');
+        toggle.setAttribute('aria-expanded', 'false');
+    };
+
+    if (toggle && sidebar) {
+        toggle.addEventListener('click', () => {
+            const opened = sidebar.classList.toggle('is-open');
+            toggle.setAttribute('aria-expanded', opened ? 'true' : 'false');
+        });
+        document.addEventListener('click', (event) => {
+            if (sidebar.classList.contains('is-open') && !sidebar.contains(event.target) && !toggle.contains(event.target)) closeMenu();
+        });
+        sidebar.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
+    }
+
+    if (!window.SG_APP || !SG_APP.userEndpoint || !SG_APP.nonce) {
+        if (apiState) apiState.textContent = 'Yapılandırma eksik';
+        return;
+    }
+
+    fetch(SG_APP.userEndpoint, {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: { 'X-WP-Nonce': SG_APP.nonce, 'Accept': 'application/json' }
+    }).then((response) => {
+        if (!response.ok) throw new Error('API yanıtı alınamadı');
+        return response.json();
+    }).then((user) => {
+        if (userName) userName.textContent = user.displayName || 'Kullanıcı';
+        if (sessionState) sessionState.textContent = 'Aktif';
+        if (apiState) apiState.textContent = 'Bağlı';
+        return fetch(SG_APP.permissionsEndpoint, {
+            method: 'GET', credentials: 'same-origin',
+            headers: { 'X-WP-Nonce': SG_APP.nonce, 'Accept': 'application/json' }
+        });
+    }).then((response) => {
+        if (!response || !response.ok) throw new Error('İzin bilgisi alınamadı');
+        return response.json();
+    }).then((data) => {
+        const granted = new Set(data.permissions || []);
+        root.querySelectorAll('[data-permission]').forEach((link) => {
+            if (!granted.has(link.dataset.permission)) link.hidden = true;
+        });
+        root.querySelectorAll('.sg-nav-heading').forEach((heading) => {
+            let next = heading.nextElementSibling;
+            let hasVisible = false;
+            while (next && !next.classList.contains('sg-nav-heading')) {
+                if (next.matches('a') && !next.hidden) hasVisible = true;
+                next = next.nextElementSibling;
+            }
+            heading.hidden = !hasVisible;
+        });
+        setupNavigation(granted);
+        try { setupCustomerModule(granted); } catch (e) { console.error('Müşteri modülü başlatılamadı:', e); }
+        try { setupSupplierModule(granted); } catch (e) { console.error('Tedarikçi modülü başlatılamadı:', e); }
+        try { setupAccountsModule(granted); } catch (e) { console.error('Cari hesap modülü başlatılamadı:', e); }
+        try { setupCashBankModule(granted); } catch (e) { console.error('Kasa/banka modülü başlatılamadı:', e); }
+        try { setupIncomeExpenseModule(granted); } catch (e) { console.error('Gelir/gider modülü başlatılamadı:', e); }
+        loadDashboard();
+    }).catch(() => {
+        if (sessionState) sessionState.textContent = 'Kontrol edilemedi';
+        if (apiState) apiState.textContent = 'Bağlantı hatası';
+        if (userName) userName.textContent = 'Hesap doğrulanamadı';
+    });
+})();
