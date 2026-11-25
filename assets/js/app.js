@@ -180,8 +180,8 @@
                 }
                 customerItems.forEach((customer) => {
                     const tr = document.createElement('tr');
-                    [customer.party_code, customer.company_name, customer.contact_name, customer.phone ? formatTurkishPhone(customer.phone) : '', customer.email].forEach((value) => { const td = document.createElement('td'); td.textContent = value || '—'; tr.appendChild(td); });
-                    const status = document.createElement('td'); status.textContent = customer.status === 'active' ? 'Aktif' : 'Pasif'; status.className = customer.status === 'active' ? 'sg-customer-active' : 'sg-customer-passive'; tr.appendChild(status);
+                    [['Müşteri Kodu',customer.party_code],['Müşteri / Firma',customer.company_name],['Yetkili',customer.contact_name],['Telefon',customer.phone ? formatTurkishPhone(customer.phone) : ''],['E-posta',customer.email]].forEach(([label,value]) => { const td = document.createElement('td'); td.dataset.label = label; td.textContent = value || '—'; tr.appendChild(td); });
+                    const status = document.createElement('td'); status.dataset.label = 'Durum'; status.textContent = customer.status === 'active' ? 'Aktif' : 'Pasif'; status.className = customer.status === 'active' ? 'sg-customer-active' : 'sg-customer-passive'; tr.appendChild(status);
                     const actions = document.createElement('td'); actions.className = 'sg-customer-actions';
                     const view = document.createElement('button'); view.type = 'button'; view.className = 'sg-button sg-button-small sg-button-light'; view.textContent = 'Detay'; view.addEventListener('click', () => openCustomer(customer.id, true)); actions.appendChild(view);
                     if (permissions.has('customers.edit')) { const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'sg-button sg-button-small sg-button-light'; edit.textContent = 'Düzenle'; edit.addEventListener('click', () => openCustomer(customer.id, false)); actions.appendChild(edit); }
@@ -644,20 +644,26 @@
         load();
     };
 
+    const menuBackdrop = root.querySelector('.sg-menu-backdrop');
     const closeMenu = () => {
         if (!sidebar || !toggle) return;
         sidebar.classList.remove('is-open');
+        if (menuBackdrop) menuBackdrop.classList.remove('is-visible');
         toggle.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('sg-menu-open');
     };
 
     if (toggle && sidebar) {
-        toggle.addEventListener('click', () => {
-            const opened = sidebar.classList.toggle('is-open');
+        toggle.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const opened = !sidebar.classList.contains('is-open');
+            sidebar.classList.toggle('is-open', opened);
+            if (menuBackdrop) menuBackdrop.classList.toggle('is-visible', opened);
             toggle.setAttribute('aria-expanded', opened ? 'true' : 'false');
+            document.body.classList.toggle('sg-menu-open', opened);
         });
-        document.addEventListener('click', (event) => {
-            if (sidebar.classList.contains('is-open') && !sidebar.contains(event.target) && !toggle.contains(event.target)) closeMenu();
-        });
+        if (menuBackdrop) menuBackdrop.addEventListener('click', closeMenu);
+        document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeMenu(); });
         sidebar.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
     }
 
