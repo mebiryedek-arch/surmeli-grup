@@ -14,6 +14,7 @@ require_once SG_PLUGIN_DIR . 'modules/suppliers/class-suppliers.php';
 require_once SG_PLUGIN_DIR . 'modules/accounts/class-accounts.php';
 require_once SG_PLUGIN_DIR . 'modules/cash-bank/class-cash-bank.php';
 require_once SG_PLUGIN_DIR . 'modules/income-expense/class-income-expense.php';
+require_once SG_PLUGIN_DIR . 'modules/jobs/class-jobs.php';
 
 final class SG_Loader {
     public static function init(): void {
@@ -26,6 +27,7 @@ final class SG_Loader {
         SG_Accounts::init();
         SG_Cash_Bank::init();
         SG_Income_Expense::init();
+        SG_Jobs::init();
         add_action( 'admin_init', array( __CLASS__, 'maybe_upgrade_database' ), 5 );
     }
 

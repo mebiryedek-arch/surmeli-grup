@@ -1,0 +1,31 @@
+name: Build installable Sürmeli Grup ZIP
+
+on:
+  push:
+    branches:
+      - feature/is-takip-012
+  workflow_dispatch:
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare WordPress plugin directory
+        run: |
+          mkdir -p dist/surmeli-grup
+          git archive HEAD | tar -x -C dist/surmeli-grup
+          find dist/surmeli-grup -type d -name .git -prune -exec rm -rf {} +
+      - name: PHP syntax check
+        run: |
+          find dist/surmeli-grup -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Create installable ZIP
+        run: |
+          cd dist
+          zip -qr surmeli-grup-0.12.0.zip surmeli-grup
+      - uses: actions/upload-artifact@v4
+        with:
+          name: surmeli-grup-0.12.0-installable
+          path: dist/surmeli-grup-0.12.0.zip
+          if-no-files-found: error
+          retention-days: 14

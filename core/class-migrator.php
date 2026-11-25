@@ -43,6 +43,7 @@ final class SG_Migrator {
             require_once SG_PLUGIN_DIR . 'database/migrations/001-create-core-schema.php';
             require_once SG_PLUGIN_DIR . 'database/migrations/002-seed-permissions.php';
             require_once SG_PLUGIN_DIR . 'database/migrations/006-income-expense.php';
+            require_once SG_PLUGIN_DIR . 'database/migrations/007-job-tracking.php';
             $migration = new SG_Migration_001_Create_Core_Schema();
             $missing_tables = array();
             foreach ( $migration->get_tables() as $table_name ) {
@@ -119,6 +120,21 @@ final class SG_Migrator {
                 $exists = $wpdb->get_var( $wpdb->prepare( "SELECT migration FROM {$table} WHERE migration = %s LIMIT 1", $name ) );
                 if ( $exists ) { return true; }
                 $migration = new SG_Migration_006_Income_Expense();
+                $result = $migration->up();
+                if ( is_wp_error( $result ) ) { return $result; }
+                $inserted = $wpdb->insert( $table, array( 'migration' => $name, 'applied_at' => current_time( 'mysql', true ) ), array( '%s', '%s' ) );
+                return false === $inserted ? new WP_Error( 'sg_migration_record_failed', $wpdb->last_error ) : true;
+            };
+
+            $migrations['007_job_tracking'] = static function () use ( $wpdb ) {
+                $table = $wpdb->prefix . 'sg_schema_migrations';
+                $name = '007_job_tracking';
+                $exists = $wpdb->get_var( $wpdb->prepare( "SELECT migration FROM {$table} WHERE migration = %s LIMIT 1", $name ) );
+                if ( $exists ) {
+                    $migration = new SG_Migration_007_Job_Tracking();
+                    return $migration->up();
+                }
+                $migration = new SG_Migration_007_Job_Tracking();
                 $result = $migration->up();
                 if ( is_wp_error( $result ) ) { return $result; }
                 $inserted = $wpdb->insert( $table, array( 'migration' => $name, 'applied_at' => current_time( 'mysql', true ) ), array( '%s', '%s' ) );
