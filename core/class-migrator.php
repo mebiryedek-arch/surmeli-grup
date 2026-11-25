@@ -44,6 +44,7 @@ final class SG_Migrator {
             require_once SG_PLUGIN_DIR . 'database/migrations/002-seed-permissions.php';
             require_once SG_PLUGIN_DIR . 'database/migrations/006-income-expense.php';
             require_once SG_PLUGIN_DIR . 'database/migrations/007-job-tracking.php';
+            require_once SG_PLUGIN_DIR . 'database/migrations/008-personnel-tracking.php';
             $migration = new SG_Migration_001_Create_Core_Schema();
             $missing_tables = array();
             foreach ( $migration->get_tables() as $table_name ) {
@@ -137,6 +138,21 @@ final class SG_Migrator {
                 $migration = new SG_Migration_007_Job_Tracking();
                 $result = $migration->up();
                 if ( is_wp_error( $result ) ) { return $result; }
+                $inserted = $wpdb->insert( $table, array( 'migration' => $name, 'applied_at' => current_time( 'mysql', true ) ), array( '%s', '%s' ) );
+                return false === $inserted ? new WP_Error( 'sg_migration_record_failed', $wpdb->last_error ) : true;
+            };
+
+            $migrations['008_personnel_tracking'] = static function () use ( $wpdb ) {
+                $table = $wpdb->prefix . 'sg_schema_migrations';
+                $name = '008_personnel_tracking';
+                $migration = new SG_Migration_008_Personnel_Tracking();
+                $result = $migration->up();
+                if ( is_wp_error( $result ) ) { return $result; }
+                $seed = new SG_Migration_002_Seed_Permissions();
+                $seed_result = $seed->up();
+                if ( is_wp_error( $seed_result ) ) { return $seed_result; }
+                $exists = $wpdb->get_var( $wpdb->prepare( "SELECT migration FROM {$table} WHERE migration = %s LIMIT 1", $name ) );
+                if ( $exists ) { return true; }
                 $inserted = $wpdb->insert( $table, array( 'migration' => $name, 'applied_at' => current_time( 'mysql', true ) ), array( '%s', '%s' ) );
                 return false === $inserted ? new WP_Error( 'sg_migration_record_failed', $wpdb->last_error ) : true;
             };
