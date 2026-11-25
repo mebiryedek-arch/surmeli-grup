@@ -88,6 +88,17 @@ final class SG_Jobs {
         return $data;
     }
 
+    private static function validate_references( array $data ): true|WP_Error {
+        global $wpdb;
+        if ( ! empty( $data['assigned_personnel_id'] ) && ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM " . self::table( 'personnel' ) . " WHERE id=%d AND status='active'", $data['assigned_personnel_id'] ) ) ) {
+            return new WP_Error( 'sg_job_personnel', 'Seçilen personel aktif değil.', array( 'status' => 400 ) );
+        }
+        if ( ! empty( $data['party_id'] ) && ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM " . self::table( 'parties' ) . " WHERE id=%d AND party_type='customer' AND status='active'", $data['party_id'] ) ) ) {
+            return new WP_Error( 'sg_job_customer', 'Seçilen müşteri bulunamadı.', array( 'status' => 400 ) );
+        }
+        return true;
+    }
+
     private static function history( int $id, string $action, $old, $new, string $note = '' ): void {
         global $wpdb;
         $wpdb->insert( self::table( 'job_history' ), array(
@@ -102,6 +113,8 @@ final class SG_Jobs {
         global $wpdb;
         $data = self::payload( $request, true );
         if ( is_wp_error( $data ) ) { return $data; }
+        $references = self::validate_references( $data );
+        if ( is_wp_error( $references ) ) { return $references; }
         $now = current_time( 'mysql', true );
         $lock = 'sg_job_no_' . wp_date( 'Y' );
         if ( 1 !== (int) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s,5)', $lock ) ) ) { return new WP_Error( 'sg_job_lock', 'Görev numarası üretilemedi; tekrar deneyin.', array( 'status' => 503 ) ); }
@@ -145,8 +158,8 @@ final class SG_Jobs {
             $data = $allowed;
         }
         if ( ! $data ) { return new WP_Error( 'sg_job_empty', 'Güncellenecek alan bulunamadı.', array( 'status' => 400 ) ); }
-        if ( isset( $data['assigned_personnel_id'] ) && $data['assigned_personnel_id'] && ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM " . self::table( 'personnel' ) . " WHERE id=%d AND status='active'", $data['assigned_personnel_id'] ) ) ) { return new WP_Error( 'sg_job_personnel', 'Seçilen personel aktif değil.', array( 'status' => 400 ) ); }
-        if ( isset( $data['party_id'] ) && $data['party_id'] && ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM " . self::table( 'parties' ) . " WHERE id=%d AND party_type='customer' AND status='active'", $data['party_id'] ) ) ) { return new WP_Error( 'sg_job_customer', 'Seçilen müşteri bulunamadı.', array( 'status' => 400 ) ); }
+        $references = self::validate_references( $data );
+        if ( is_wp_error( $references ) ) { return $references; }
         $data['updated_at'] = current_time( 'mysql', true );
         if ( 'completed' === ( $data['status'] ?? '' ) ) { $data['completed_at'] = $data['updated_at']; }
         if ( false === $wpdb->update( self::table(), $data, array( 'id' => $id ) ) ) { return new WP_Error( 'sg_job_update', 'Görev güncellenemedi.', array( 'status' => 500 ) ); }
