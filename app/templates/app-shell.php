@@ -3,6 +3,14 @@
 defined( 'ABSPATH' ) || exit;
 ?>
 <div class="sg-app" id="sg-app-root">
+    <div class="sg-loading-overlay" id="sg-loading-overlay" role="status" aria-live="polite" aria-label="İşlem sürüyor" hidden>
+        <div class="sg-loading-card">
+            <img class="sg-loading-logo" src="<?php echo esc_url( SG_PLUGIN_URL . 'assets/images/surmeli-grup-logo.svg' ); ?>" alt="">
+            <span class="sg-loading-spinner" aria-hidden="true"></span>
+            <strong>İşleminiz gerçekleştiriliyor</strong>
+            <small>Lütfen bekleyin…</small>
+        </div>
+    </div>
     <header class="sg-topbar">
         <div class="sg-topbar-left">
             <a class="sg-home-button" href="<?php echo esc_url( SG_APP_URL ); ?>" aria-label="Ana sayfa" title="Ana sayfa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
