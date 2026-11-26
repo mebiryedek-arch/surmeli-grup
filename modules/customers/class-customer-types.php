@@ -21,7 +21,7 @@ final class SG_Customer_Types {
     public static function list_types(): WP_REST_Response { return new WP_REST_Response( array( 'items' => self::all() ), 200 ); }
     private static function clean_name( WP_REST_Request $r ): string|WP_Error {
         $name = trim( sanitize_text_field( (string) $r->get_param( 'name' ) ) );
-        if ( '' === $name || mb_strlen( $name ) > 60 ) { return new WP_Error( 'sg_customer_type_name', 'Tür adı 1-60 karakter arasında olmalıdır.', array( 'status' => 400 ) ); }
+        if ( '' === $name || strlen( $name ) > 240 ) { return new WP_Error( 'sg_customer_type_name', 'Tür adı 1-60 karakter arasında olmalıdır.', array( 'status' => 400 ) ); }
         return $name;
     }
     private static function make_key( string $name ): string {
