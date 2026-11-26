@@ -295,3 +295,20 @@ body.sg-standalone-app:has(.sg-login-page){background:#071426}
 .sg-login-copyright{position:relative;margin-top:19px;color:rgba(226,238,249,.58);font-size:10px;letter-spacing:.25px}
 @media(max-width:520px){.sg-login-page{justify-content:center;padding:24px 15px calc(24px + env(safe-area-inset-bottom))}.sg-login-card{padding:32px 23px 26px;border-radius:21px}.sg-login-logo{width:min(100%,210px);max-height:76px;margin-bottom:24px}.sg-login-card h1{font-size:26px}.sg-login-description{margin-bottom:21px}}
 @media(prefers-reduced-motion:reduce){.sg-login-form button,.sg-login-app-button{transition:none}.sg-login-form button:hover,.sg-login-app-button:hover{transform:none}}
+
+
+/* Branded 404 screen for invalid standalone application URLs */
+.sg-app-not-found,.sg-app-not-found *{box-sizing:border-box}
+.sg-app-not-found{min-height:100vh;padding:28px 18px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 16% 18%,rgba(8,120,201,.11),transparent 34%),radial-gradient(circle at 86% 82%,rgba(244,119,33,.10),transparent 30%),#f3f6fa;color:#1f2937}
+.sg-app-not-found-card{width:min(100%,560px);padding:46px 44px 34px;text-align:center;background:#fff;border:1px solid #e6ebf1;border-radius:20px;box-shadow:0 20px 60px rgba(22,45,72,.11)}
+.sg-app-not-found-logo{display:block;width:min(100%,230px);max-height:82px;object-fit:contain;margin:0 auto 24px}
+.sg-app-not-found-code{font-size:clamp(58px,13vw,88px);line-height:1;font-weight:850;letter-spacing:-5px;color:rgba(8,120,201,.13);margin:2px 0 12px}
+.sg-app-not-found-card .sg-login-eyebrow{margin-bottom:10px}
+.sg-app-not-found-card h1{margin:0;color:#18283a;font-size:clamp(23px,5vw,30px);letter-spacing:-.7px}
+.sg-app-not-found-description{max-width:410px;margin:13px auto 26px;color:#718096;font-size:14px;line-height:1.75}
+.sg-app-not-found-actions{display:flex;flex-direction:column;align-items:center;gap:15px}
+.sg-app-not-found-actions .sg-login-button-link{width:min(100%,280px);min-height:49px;display:flex;align-items:center;justify-content:center;gap:10px}
+.sg-app-not-found-home{color:#64748b;font-size:13px;font-weight:650;text-decoration:none}
+.sg-app-not-found-home:hover{color:var(--sg-blue);text-decoration:underline}
+.sg-app-not-found-brand{margin:0 0 20px;font-weight:800;letter-spacing:2px;color:#263648}
+@media(max-width:480px){.sg-app-not-found{padding:18px 14px}.sg-app-not-found-card{padding:36px 23px 27px;border-radius:16px}.sg-app-not-found-logo{width:min(100%,205px);margin-bottom:20px}.sg-app-not-found-description{font-size:13px}}
