@@ -34,6 +34,8 @@ defined( 'ABSPATH' ) || exit;
                 <a href="#personnel" data-section="personnel" data-permission="personnel.view"><span class="sg-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21v-2a7 7 0 0 1 14 0v2M16 4a4 4 0 0 1 0 8M18 15a5 5 0 0 1 4 5v1"/></svg></span><span class="sg-nav-label">Personel</span></a>
                 <a href="#jobs" data-section="jobs" data-permission="jobs.view"><span class="sg-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18M8 14l2 2 5-5"/></svg></span><span class="sg-nav-label">İş Takip</span></a>
                 <a href="#reports" data-section="reports" data-permission="reports.view"><span class="sg-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V4M4 20h17M8 16v-4M13 16V7M18 16v-7"/></svg></span><span class="sg-nav-label">Raporlar</span></a>
+                            <span class="sg-nav-heading">Yönetim</span>
+                <a href="#settings" data-section="settings" data-permission="settings.manage"><span class="sg-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.7 1.7-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.2h-2.4v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1L8 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H6.7v-2.4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9L8 8.6l1.7-1.7.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5v-.2h2.4v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.7 1.7-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.2V14h-.2a1.7 1.7 0 0 0-1.5 1z"/></svg></span><span class="sg-nav-label">Ayarlar</span></a>
             </nav>
             <div class="sg-sidebar-foot">
                 <div class="sg-sidebar-secure"><span class="sg-status-dot"></span> Güvenli oturum</div>
@@ -81,7 +83,7 @@ defined( 'ABSPATH' ) || exit;
                     <div class="sg-panel-heading"><div><p class="sg-card-kicker">MÜŞTERİ KARTI</p><h2 id="sg-customer-editor-title">Yeni Müşteri</h2></div><button type="button" class="sg-button sg-button-light" id="sg-customer-cancel">Kapat</button></div>
                     <form id="sg-customer-form" class="sg-customer-form">
                         <input type="hidden" id="sg-customer-id" value="">
-                        <label><span>Müşteri türü</span><select id="sg-customer-kind"><option value="corporate">Kurumsal</option><option value="individual">Bireysel</option></select></label>
+                        <label><span>Müşteri türü</span><select id="sg-customer-kind" required><option value="">Önce Ayarlar bölümünden müşteri türü ekleyin</option></select></label>
                         <label class="sg-field-wide"><span>Firma / Müşteri adı *</span><input id="sg-customer-company" required maxlength="190"></label>
                         <label><span>Yetkili kişi</span><input id="sg-customer-contact" maxlength="190"></label>
                         <label><span>Telefon</span><input id="sg-customer-phone" type="tel" maxlength="17" placeholder="0 (555) 555 55 55" inputmode="numeric" autocomplete="tel"></label>
@@ -197,6 +199,16 @@ defined( 'ABSPATH' ) || exit;
                     <form id="sg-job-form" class="sg-customer-form"><input type="hidden" id="sg-job-id"><label class="sg-field-wide"><span>Görev başlığı *</span><input id="sg-job-title" required maxlength="190"></label><label><span>Başlangıç tarihi</span><input id="sg-job-start" type="date"></label><label><span>Termin tarihi</span><input id="sg-job-due" type="date"></label><label><span>Sorumlu personel</span><select id="sg-job-person"><option value="">Atama yok</option></select></label><label><span>Müşteri / Proje</span><select id="sg-job-customer"><option value="">Bağlantı yok</option></select></label><label><span>Öncelik</span><select id="sg-job-priority"><option value="low">Düşük</option><option value="normal" selected>Normal</option><option value="high">Yüksek</option><option value="urgent">Acil</option></select></label><label><span>Durum</span><select id="sg-job-status"><option value="new">Yeni</option><option value="assigned">Atandı</option><option value="in_progress">Devam ediyor</option><option value="on_hold">Beklemede</option><option value="completed">Tamamlandı</option><option value="cancelled">İptal</option></select></label><label class="sg-field-wide"><span>Açıklama</span><textarea id="sg-job-description" rows="3"></textarea></label><div class="sg-form-actions"><p id="sg-job-message" role="status"></p><button type="submit" class="sg-button sg-button-primary">Kaydet</button></div></form>
                     <div id="sg-job-detail" hidden><h3 class="sg-account-history-title">Notlar ve aktivite</h3><div id="sg-job-notes"></div><form id="sg-job-note-form" class="sg-job-note-form"><textarea id="sg-job-note" rows="2" placeholder="Göreve not ekleyin…"></textarea><button type="submit" class="sg-button sg-button-primary">Not ekle</button></form><div id="sg-job-history" class="sg-job-history"></div></div>
                 </dialog>
+            </section>
+            <section class="sg-section-view" data-section-view="settings" hidden>
+                <div class="sg-module-heading"><div><p class="sg-eyebrow">YÖNETİM / AYARLAR</p><h1>Uygulama Ayarları</h1><p>Müşteri kartlarında kullanılacak türleri buradan tanımlayın.</p></div></div>
+                <div class="sg-panel sg-settings-panel">
+                    <div class="sg-panel-heading"><div><p class="sg-card-kicker">MÜŞTERİ YÖNETİMİ</p><h2>Müşteri Türleri</h2><p class="sg-panel-subtitle">Tür adlarını işletmenizin ihtiyaçlarına göre siz belirleyin. Henüz varsayılan tür eklenmemiştir.</p></div></div>
+                    <form id="sg-customer-type-form" class="sg-customer-type-form"><label><span>Yeni müşteri türü</span><input id="sg-customer-type-name" maxlength="60" required placeholder="Örn. Bayi, VIP, Proje müşterisi"></label><button type="submit" class="sg-button sg-button-primary" id="sg-customer-type-save">Tür Ekle</button></form>
+                    <p id="sg-customer-type-message" class="sg-settings-message" role="status"></p>
+                    <div class="sg-table-wrap"><table class="sg-dashboard-table"><thead><tr><th>Müşteri türü</th><th>İşlem</th></tr></thead><tbody id="sg-customer-type-rows"><tr><td colspan="2" class="sg-table-empty">Türler yükleniyor…</td></tr></tbody></table></div>
+                    <p class="sg-footnote">Kullanımda olan müşteri türleri silinemez. Önce ilgili müşteri kartlarının türünü değiştirmeniz gerekir.</p>
+                </div>
             </section>
         </main>
     </div>
