@@ -23,10 +23,10 @@ jobs:
       - name: Create installable ZIP
         run: |
           cd dist
-          zip -qr surmeli-grup-0.12.3.zip surmeli-grup
+          zip -qr surmeli-grup-0.12.4.zip surmeli-grup
       - uses: actions/upload-artifact@v4
         with:
-          name: surmeli-grup-0.12.3-installable
-          path: dist/surmeli-grup-0.12.3.zip
+          name: surmeli-grup-0.12.4-installable
+          path: dist/surmeli-grup-0.12.4.zip
           if-no-files-found: error
           retention-days: 14
