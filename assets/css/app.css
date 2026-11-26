@@ -264,3 +264,34 @@ html,body{margin:0;min-height:100%;background:var(--sg-bg)}body.sg-standalone-ap
 .sg-login-app-button{width:100%;min-height:46px;margin-top:12px;display:flex;align-items:center;justify-content:center;border:1px solid #cbd5e1;border-radius:9px;background:#f1f3f5;color:#334155;font:inherit;font-size:13px;font-weight:750;cursor:pointer;transition:background .15s,border-color .15s}
 .sg-login-app-button:hover,.sg-login-app-button:focus-visible{background:#e9edf1;border-color:#b8c3cf;outline:none}
 .sg-pwa-login-help{min-height:30px;margin:9px 0 0;text-align:center;color:#8491a1;font-size:11px;line-height:1.5}
+
+
+/* Premium Sürmeli Grup login experience */
+body.sg-standalone-app:has(.sg-login-page){background:#071426}
+.sg-login-page{position:relative;isolation:isolate;overflow:hidden;min-height:100svh;padding:clamp(24px,5vh,56px) 18px;background:radial-gradient(ellipse at 14% 18%,rgba(15,132,210,.34),transparent 34%),radial-gradient(ellipse at 86% 78%,rgba(242,119,38,.18),transparent 30%),radial-gradient(ellipse at 52% 110%,rgba(17,91,150,.38),transparent 46%),linear-gradient(135deg,#071426 0%,#0a2038 48%,#101b2c 100%);color:#eaf2fb}
+.sg-login-page:before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.22;background-image:linear-gradient(rgba(177,207,232,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(177,207,232,.12) 1px,transparent 1px);background-size:58px 58px;mask-image:linear-gradient(to bottom,black,transparent 92%)}
+.sg-login-page:after{content:"";position:absolute;z-index:-1;pointer-events:none;width:min(72vw,760px);aspect-ratio:1;right:-22%;top:-42%;border:1px solid rgba(148,190,224,.13);border-radius:50%;box-shadow:0 0 0 46px rgba(148,190,224,.025),0 0 0 92px rgba(148,190,224,.02),0 0 110px rgba(16,130,207,.12)}
+.sg-login-card{position:relative;width:min(100%,470px);padding:clamp(30px,5vw,48px) clamp(24px,5vw,46px) 34px;border:1px solid rgba(255,255,255,.72);border-radius:25px;background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(246,250,254,.96));box-shadow:0 34px 100px rgba(0,0,0,.38),0 8px 26px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.95);color:#17283b;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.sg-login-card:before{content:"";position:absolute;top:0;left:12%;right:12%;height:3px;border-radius:0 0 8px 8px;background:linear-gradient(90deg,transparent,#168bd0 24%,#f47721 76%,transparent)}
+.sg-login-logo{width:min(100%,238px);max-height:86px;margin:0 auto 28px;filter:drop-shadow(0 5px 12px rgba(14,45,72,.09))}
+.sg-login-eyebrow{margin-bottom:10px;color:#bd641f;font-size:9px;letter-spacing:2.2px}
+.sg-login-card h1{color:#10263d;font-size:30px;letter-spacing:-.8px;font-weight:800}
+.sg-login-description{margin:10px 0 25px;color:#6c7d90;font-size:13px;line-height:1.65}
+.sg-login-form{gap:9px}
+.sg-login-form>label:not(.sg-remember){margin-top:8px;color:#30465c;font-size:11px;font-weight:750;letter-spacing:.2px}
+.sg-login-form input[type=text],.sg-login-form input[type=password]{height:51px;padding:0 15px;border:1px solid #d7e1eb;border-radius:12px;background:#f8fafc;color:#17283b;font-size:14px;transition:border-color .2s,box-shadow .2s,background .2s}
+.sg-login-form input[type=text]:hover,.sg-login-form input[type=password]:hover{border-color:#a9c6dc}
+.sg-login-form input[type=text]:focus,.sg-login-form input[type=password]:focus{border-color:#1686c9;background:#fff;box-shadow:0 0 0 4px rgba(22,134,201,.12)}
+.sg-remember{margin:8px 0 12px;color:#65788b;font-size:12px}
+.sg-remember input{width:17px;height:17px;accent-color:#0878c9}
+.sg-login-form button,.sg-login-button-link{min-height:51px;border-radius:12px;background:linear-gradient(110deg,#0878c9,#075da5);box-shadow:0 9px 22px rgba(8,104,174,.24);font-size:13px;font-weight:800;letter-spacing:.15px;transition:transform .18s,box-shadow .18s,filter .18s}
+.sg-login-form button:hover,.sg-login-form button:focus-visible,.sg-login-button-link:hover{background:linear-gradient(110deg,#096db4,#064f8c);box-shadow:0 12px 26px rgba(8,104,174,.3);transform:translateY(-1px)}
+.sg-login-form button:focus-visible,.sg-login-app-button:focus-visible{outline:3px solid rgba(8,120,201,.25);outline-offset:3px}
+.sg-login-app-button{min-height:49px;margin-top:13px;border:1px solid #d3e0eb;border-radius:12px;background:#edf4f9;color:#24445f;font-size:12px;font-weight:800;transition:background .18s,border-color .18s,transform .18s}
+.sg-login-app-button:hover{background:#e3eff7;border-color:#a9c8df;transform:translateY(-1px)}
+.sg-pwa-login-help{min-height:31px;margin-top:9px;color:#8292a2;font-size:10px;line-height:1.55}
+.sg-login-error{border-radius:11px}
+.sg-login-footer{margin-top:22px;padding-top:17px;border-top:1px solid #e9eef3;color:#8b9aaa;font-size:10px;letter-spacing:.15px}
+.sg-login-copyright{position:relative;margin-top:19px;color:rgba(226,238,249,.58);font-size:10px;letter-spacing:.25px}
+@media(max-width:520px){.sg-login-page{justify-content:center;padding:24px 15px calc(24px + env(safe-area-inset-bottom))}.sg-login-card{padding:32px 23px 26px;border-radius:21px}.sg-login-logo{width:min(100%,210px);max-height:76px;margin-bottom:24px}.sg-login-card h1{font-size:26px}.sg-login-description{margin-bottom:21px}}
+@media(prefers-reduced-motion:reduce){.sg-login-form button,.sg-login-app-button{transition:none}.sg-login-form button:hover,.sg-login-app-button:hover{transform:none}}
