@@ -322,3 +322,7 @@ body.sg-standalone-app:has(.sg-login-page){background:#071426}
 .sg-login-app-button:hover,.sg-login-app-button:focus-visible{background:#f3f8fc;border-color:#8fb6d2;transform:translateY(-1px);outline:none}
 .sg-pwa-login-help{min-height:0;margin:9px 0 0;color:#8492a1;font-size:10px;line-height:1.55}
 @media(max-width:520px){.sg-login-app-install{margin-top:21px;padding-top:17px}.sg-login-app-button{min-height:45px}}
+
+/* Customer type settings */
+.sg-settings-panel{max-width:900px}.sg-settings-panel .sg-panel-heading{align-items:flex-start}.sg-panel-subtitle{margin:6px 0 0;color:#718096;font-size:12px}.sg-customer-type-form{display:flex;align-items:flex-end;gap:12px;padding:15px 0;border-top:1px solid #edf0f4;border-bottom:1px solid #edf0f4}.sg-customer-type-form label{display:flex;flex:1;flex-direction:column;gap:6px;color:#64748b;font-size:11px;font-weight:650}.sg-customer-type-form input{width:100%;min-height:40px;padding:9px 11px;border:1px solid #dce4ec;border-radius:8px;font:inherit;font-size:12px}.sg-settings-message{min-height:18px;color:#64748b;font-size:11px}.sg-settings-panel .sg-customer-actions{gap:7px}
+@media(max-width:640px){.sg-customer-type-form{align-items:stretch;flex-direction:column}.sg-customer-type-form .sg-button{width:100%}}
