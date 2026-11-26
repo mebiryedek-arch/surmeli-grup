@@ -1,4 +1,4 @@
-name: Build tested Sürmeli Grup 0.12.5 ZIP
+name: Build tested Sürmeli Grup 0.12.6 ZIP
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
       - name: Verify plugin and migration entry points
         run: |
           test -f surmeli-grup.php
-          grep -q "Version: 0.12.5" surmeli-grup.php
+          grep -q "Version: 0.12.6" surmeli-grup.php
           grep -q "SG_DB_VERSION', '1.7.0'" surmeli-grup.php
           test -f database/migrations/007-job-tracking.php
           test -f database/migrations/008-personnel-tracking.php
@@ -43,12 +43,12 @@ jobs:
           mkdir -p dist/surmeli-grup
           git archive HEAD | tar -x -C dist/surmeli-grup
           cd dist
-          zip -qr surmeli-grup-0.12.5.zip surmeli-grup
-          unzip -t surmeli-grup-0.12.5.zip
-          unzip -l surmeli-grup-0.12.5.zip | grep -E 'surmeli-grup/(surmeli-grup.php|app/class-pwa.php|database/migrations/008-personnel-tracking.php|modules/personnel/class-personnel.php)$'
+          zip -qr surmeli-grup-0.12.6.zip surmeli-grup
+          unzip -t surmeli-grup-0.12.6.zip
+          unzip -l surmeli-grup-0.12.6.zip | grep -E 'surmeli-grup/(surmeli-grup.php|app/class-pwa.php|database/migrations/008-personnel-tracking.php|modules/personnel/class-personnel.php)$'
       - uses: actions/upload-artifact@v4
         with:
-          name: surmeli-grup-0.12.5-php81-tested
-          path: dist/surmeli-grup-0.12.5.zip
+          name: surmeli-grup-0.12.6-php81-tested
+          path: dist/surmeli-grup-0.12.6.zip
           if-no-files-found: error
           retention-days: 30
