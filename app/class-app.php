@@ -10,6 +10,7 @@ final class SG_App {
         add_action( 'init', array( __CLASS__, 'register_route' ), 1 );
         add_filter( 'query_vars', array( __CLASS__, 'register_query_var' ) );
         add_action( 'template_redirect', array( __CLASS__, 'maybe_render_portal' ), -100 );
+        add_action( 'template_redirect', array( __CLASS__, 'maybe_render_app_not_found' ), -99 );
         add_action( 'admin_init', array( __CLASS__, 'remove_legacy_plugin_page' ), 40 );
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
     }
@@ -150,6 +151,39 @@ final class SG_App {
         }
         echo '<script>if ("serviceWorker" in navigator && location.protocol === "https:") { window.addEventListener("load", function () { navigator.serviceWorker.register(' . wp_json_encode( add_query_arg( 'sg_pwa_sw', '1', home_url( '/' ) ) ) . ', { scope: ' . wp_json_encode( SG_APP_URL ) . ' }).catch(function (error) { console.warn("Sürmeli Grup PWA kaydı başarısız:", error); }); }); }</script>';
         echo '</body></html>';
+    }
+
+
+    /**
+     * Render a branded not-found screen for broken paths inside the standalone app.
+     * Keep the handler scoped to the application URL so normal site 404 pages are untouched.
+     */
+    public static function maybe_render_app_not_found(): void {
+        if ( ! is_404() ) {
+            return;
+        }
+
+        $app_path = untrailingslashit( (string) wp_parse_url( SG_APP_URL, PHP_URL_PATH ) );
+        $request_path = (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ), PHP_URL_PATH );
+        if ( $request_path !== $app_path && 0 !== strpos( $request_path, $app_path . '/' ) ) {
+            return;
+        }
+
+        status_header( 404 );
+        nocache_headers();
+        header( 'X-Robots-Tag: noindex, nofollow', true );
+
+        $logo_url = SG_PLUGIN_URL . 'assets/images/surmeli-grup-logo.svg';
+        $css_url  = SG_PLUGIN_URL . 'assets/css/app.css?ver=' . rawurlencode( SG_VERSION );
+
+        echo '<!doctype html><html lang="tr"><head><meta charset="' . esc_attr( get_bloginfo( 'charset' ) ) . '"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#0878C9"><title>' . esc_html__( 'Sayfa bulunamadı | Sürmeli Grup', 'surmeli-grup' ) . '</title><link rel="stylesheet" href="' . esc_url( $css_url ) . '"></head><body class="sg-standalone-app"><main class="sg-app-not-found"><section class="sg-app-not-found-card" aria-labelledby="sg-app-not-found-title">';
+        if ( file_exists( SG_PLUGIN_DIR . 'assets/images/surmeli-grup-logo.svg' ) ) {
+            echo '<img class="sg-app-not-found-logo" src="' . esc_url( $logo_url ) . '" alt="Sürmeli Grup">';
+        } else {
+            echo '<div class="sg-login-brand-mark">SG</div><p class="sg-app-not-found-brand">SÜRMELİ GRUP</p>';
+        }
+        echo '<div class="sg-app-not-found-code" aria-hidden="true">404</div><p class="sg-login-eyebrow">İŞLETME YÖNETİM SİSTEMİ</p><h1 id="sg-app-not-found-title">Aradığınız sayfayı bulamadık</h1><p class="sg-app-not-found-description">Bu bağlantı taşınmış, değiştirilmiş veya artık kullanılmıyor olabilir. Uygulamaya dönerek işlemlerinize devam edebilirsiniz.</p><div class="sg-app-not-found-actions"><a class="sg-login-button-link" href="' . esc_url( SG_APP_URL ) . '">Uygulamaya Git <span aria-hidden="true">→</span></a><a class="sg-app-not-found-home" href="' . esc_url( home_url( '/' ) ) . '">Ana sayfaya dön</a></div><p class="sg-login-footer">Güvenli işletme yönetim platformu</p></section></main></body></html>';
+        exit;
     }
 
     private static function render_login( string $error = '' ): void {
