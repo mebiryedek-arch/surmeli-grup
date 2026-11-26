@@ -2,7 +2,7 @@
 Contributors: surmeligrup
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.12.5
+Stable tag: 0.12.6
 
 = 0.12.4 =
 * Fixed Android Chrome PWA installability by providing a square app icon with explicit 192x192 and 512x512 manifest sizes.
@@ -16,6 +16,10 @@ Stable tag: 0.12.5
 * Customer create/edit forms now use the customer types defined in Settings.
 * Prevented deletion of customer types that are assigned to existing customers.
 * Preserved legacy customer type values on existing records.
+
+= 0.12.6 =
+* Highlighted Turkish official holidays in soft red and religious holidays in soft green in both calendars.
+* Highlighted task days in soft yellow and added a monthly holiday list below each calendar.
 
 Sürmeli Grup işletme yönetimi uygulaması. Portal, WordPress sayfası veya shortcode oluşturmadan eklentinin özel URL rotasında çalışır.
 
