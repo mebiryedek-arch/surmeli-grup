@@ -6,6 +6,7 @@ on:
       - fix/php81-compat-012
       - feature/personnel-tracking-012
       - feature/portal-pwa-header-0122
+      - fix/password-menu-click-20261125
   pull_request:
     branches:
       - fix/php81-compat-012
