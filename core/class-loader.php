@@ -12,6 +12,7 @@ require_once SG_PLUGIN_DIR . 'app/class-app.php';
 require_once SG_PLUGIN_DIR . 'app/class-pwa.php';
 require_once SG_PLUGIN_DIR . 'modules/dashboard/class-dashboard.php';
 require_once SG_PLUGIN_DIR . 'modules/customers/class-customers.php';
+require_once SG_PLUGIN_DIR . 'modules/customers/class-customer-types.php';
 require_once SG_PLUGIN_DIR . 'modules/suppliers/class-suppliers.php';
 require_once SG_PLUGIN_DIR . 'modules/accounts/class-accounts.php';
 require_once SG_PLUGIN_DIR . 'modules/cash-bank/class-cash-bank.php';
@@ -28,6 +29,7 @@ final class SG_Loader {
         SG_PWA::init();
         SG_Dashboard::init();
         SG_Customers::init();
+        SG_Customer_Types::init();
         SG_Suppliers::init();
         SG_Accounts::init();
         SG_Cash_Bank::init();
