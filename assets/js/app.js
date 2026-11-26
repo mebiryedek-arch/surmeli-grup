@@ -189,9 +189,9 @@
         editor.addEventListener('click', (event) => { if (event.target === editor) editor.close(); });
         const kindSelect = root.querySelector('#sg-customer-kind');
         let customerTypes = [];
-        const refreshCustomerTypes = () => apiRequest(SG_APP.restRoot + 'customer-types').then((data) => {
+        const refreshCustomerTypes = (preserve = kindSelect.value) => apiRequest(SG_APP.restRoot + 'customer-types').then((data) => {
             customerTypes = Array.isArray(data.items) ? data.items : [];
-            const selected = kindSelect.value;
+            const selected = preserve;
             kindSelect.replaceChildren();
             const placeholder = document.createElement('option'); placeholder.value = ''; placeholder.textContent = customerTypes.length ? 'Tür seçin' : 'Önce Ayarlar bölümünden tür ekleyin'; kindSelect.appendChild(placeholder);
             customerTypes.forEach((type) => { const option = document.createElement('option'); option.value = type.key; option.textContent = type.name; kindSelect.appendChild(option); });
@@ -227,7 +227,7 @@
                 });
             }).catch((error) => { customerRows.replaceChildren(); const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 7; td.className = 'sg-table-empty'; td.textContent = error.message; tr.appendChild(td); customerRows.appendChild(tr); });
         };
-        const openCustomer = (id, readOnly) => apiRequest(SG_APP.customersEndpoint + '/' + id).then((customer) => refreshCustomerTypes().then(() => customer)).then((customer) => {
+        const openCustomer = (id, readOnly) => apiRequest(SG_APP.customersEndpoint + '/' + id).then((customer) => refreshCustomerTypes(customer.party_kind).then(() => customer)).then((customer) => {
             val('sg-customer-id').value = customer.id;
             Object.entries(fields).forEach(([key, fieldId]) => { val(fieldId).value = key === 'phone' && customer[key] ? formatTurkishPhone(customer[key]) : (customer[key] || (key === 'status' ? 'active' : '')); val(fieldId).disabled = readOnly; });
             val('sg-customer-editor-title').textContent = readOnly ? 'Müşteri Detayı' : 'Müşteri Düzenle';
