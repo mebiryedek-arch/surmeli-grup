@@ -259,3 +259,8 @@ html,body{margin:0;min-height:100%;background:var(--sg-bg)}body.sg-standalone-ap
 @keyframes sg-logo-float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.035)}}
 @keyframes sg-logo-turn{0%,75%,100%{rotate:0deg}85%{rotate:-8deg}95%{rotate:8deg}}
 @media(prefers-reduced-motion:reduce){.sg-loading-logo,.sg-loading-spinner{animation:none}}
+
+/* PWA action on the login screen */
+.sg-login-app-button{width:100%;min-height:46px;margin-top:12px;display:flex;align-items:center;justify-content:center;border:1px solid #cbd5e1;border-radius:9px;background:#f1f3f5;color:#334155;font:inherit;font-size:13px;font-weight:750;cursor:pointer;transition:background .15s,border-color .15s}
+.sg-login-app-button:hover,.sg-login-app-button:focus-visible{background:#e9edf1;border-color:#b8c3cf;outline:none}
+.sg-pwa-login-help{min-height:30px;margin:9px 0 0;text-align:center;color:#8491a1;font-size:11px;line-height:1.5}
