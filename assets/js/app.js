@@ -119,10 +119,70 @@
     };
 
 
+
+    // Shared Turkish holiday data for both calendars. The WordPress endpoint caches
+    // provider responses for a day and retains the last successful copy on outages.
+    const holidayYears = new Map();
+    const loadHolidayYear = (year) => {
+        if (holidayYears.has(year)) return holidayYears.get(year);
+        const promise = fetch(SG_APP.restRoot + 'holidays/' + year, {
+            credentials: 'same-origin',
+            headers: { 'X-WP-Nonce': SG_APP.nonce, 'Accept': 'application/json' }
+        }).then((response) => {
+            if (!response.ok) throw new Error('Tatil takvimi alınamadı');
+            return response.json();
+        }).then((data) => Array.isArray(data.items) ? data.items : []).catch(() => []);
+        holidayYears.set(year, promise);
+        return promise;
+    };
+    const dateKey = (day) => [day.getFullYear(), String(day.getMonth()+1).padStart(2,'0'), String(day.getDate()).padStart(2,'0')].join('-');
+    const paintHolidayCalendar = (grid, list, date, tasks, taskDate) => {
+        const year = date.getFullYear(), month = date.getMonth();
+        loadHolidayYear(year).then((holidays) => {
+            const byDate = new Map(holidays.map((holiday) => [holiday.date, holiday]));
+            grid.querySelectorAll('.sg-calendar-day').forEach((cell) => {
+                const number = cell.querySelector('.sg-calendar-day-number');
+                if (!number) return;
+                const day = Number(number.textContent);
+                const muted = cell.classList.contains('is-muted');
+                // Grid order is Monday-first; reconstruct date from the visible first cell.
+                const first = new Date(year, month, 1);
+                const offset = (first.getDay()+6)%7;
+                const index = Array.from(grid.querySelectorAll('.sg-calendar-day')).indexOf(cell);
+                const actual = new Date(year, month, 1-offset+index);
+                const key = dateKey(actual);
+                const holiday = byDate.get(key);
+                cell.classList.remove('is-holiday-official','is-holiday-religious','is-task-day');
+                if (holiday) {
+                    cell.classList.add(holiday.type === 'religious' ? 'is-holiday-religious' : 'is-holiday-official');
+                    cell.title = holiday.name;
+                } else if (taskDate && taskDate(key)) {
+                    cell.classList.add('is-task-day');
+                }
+            });
+            if (list) {
+                list.replaceChildren();
+                const monthly = holidays.filter((holiday) => holiday.date.slice(0,7) === year+'-'+String(month+1).padStart(2,'0'));
+                if (!monthly.length) {
+                    const empty = document.createElement('p'); empty.className='sg-calendar-holiday-empty'; empty.textContent='Bu ay için kayıtlı resmî veya dinî tatil bulunmuyor.'; list.appendChild(empty);
+                } else {
+                    monthly.forEach((holiday) => {
+                        const item=document.createElement('div'); item.className='sg-calendar-holiday-item '+(holiday.type==='religious'?'is-religious':'is-official');
+                        const dateLabel=document.createElement('strong'); dateLabel.textContent=new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'long'}).format(new Date(holiday.date+'T12:00:00'));
+                        const name=document.createElement('span'); name.textContent=holiday.name+(holiday.halfDay?' (Yarım gün)':'')+(holiday.tentative?' (Tahmini)':'');
+                        item.append(dateLabel,name); list.appendChild(item);
+                    });
+                }
+                const source=document.createElement('small'); source.className='sg-calendar-holiday-source'; source.textContent='Tatil verisi: OnlineTakvim'; list.appendChild(source);
+            }
+        });
+    };
+
     const setupDashboardCalendar = (permissions) => {
         const grid=root.querySelector('#sg-dashboard-calendar-grid');
         if(!grid||!permissions.has('jobs.view')||!SG_APP.jobsEndpoint)return;
         let date=new Date(), tasks=[];
+        const holidayList=root.querySelector('#sg-dashboard-holiday-list');
         const render=()=>{
             grid.replaceChildren();
             const y=date.getFullYear(),m=date.getMonth();
@@ -136,8 +196,10 @@
                 const cell=document.createElement('div');cell.className='sg-calendar-day'+(day.getMonth()!==m?' is-muted':'');
                 const n=document.createElement('span');n.className='sg-calendar-day-number';n.textContent=day.getDate();cell.appendChild(n);
                 tasks.filter(t=>String(t.due_date||'').slice(0,10)===key).slice(0,3).forEach(t=>{const b=document.createElement('button');b.type='button';b.className='sg-calendar-event';b.textContent=t.title;b.title=t.title;b.addEventListener('click',()=>{window.location.hash='jobs';});cell.appendChild(b);});
+                if(tasks.some(t=>String(t.due_date||'').slice(0,10)===key))cell.classList.add('is-task-day');
                 grid.appendChild(cell);
             }
+            paintHolidayCalendar(grid,holidayList,date,tasks,(key)=>tasks.some(t=>String(t.due_date||'').slice(0,10)===key));
         };
         const load=()=>apiRequest(SG_APP.jobsEndpoint).then(d=>{tasks=d.items||[];render();}).catch(()=>{grid.textContent='Görev takvimi şu anda yüklenemiyor.';});
         root.querySelector('#sg-dashboard-calendar-prev').addEventListener('click',()=>{date.setMonth(date.getMonth()-1);render();});
@@ -573,6 +635,7 @@
 
         const renderCalendar = () => {
             const grid=field('sg-calendar-grid');grid.replaceChildren();
+            const holidayList=field('sg-job-holiday-list');
             const y=calendarDate.getFullYear(),m=calendarDate.getMonth();
             field('sg-calendar-title').textContent=new Intl.DateTimeFormat('tr-TR',{month:'long',year:'numeric'}).format(calendarDate);
             ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].forEach(d=>{const h=document.createElement('div');h.className='sg-calendar-weekday';h.textContent=d;grid.appendChild(h);});
@@ -583,8 +646,10 @@
                 const num=document.createElement('span');num.className='sg-calendar-day-number';num.textContent=day.getDate();cell.appendChild(num);
                 const key=[day.getFullYear(),String(day.getMonth()+1).padStart(2,'0'),String(day.getDate()).padStart(2,'0')].join('-');
                 items.filter(x=>safeDate(x.due_date)===key).slice(0,3).forEach(x=>{const b=document.createElement('button');b.type='button';b.className='sg-calendar-event sg-calendar-event-'+x.priority;b.textContent=x.title;b.title=x.title;b.addEventListener('click',()=>openJob(x.id));cell.appendChild(b);});
+                if(items.some(x=>safeDate(x.due_date)===key))cell.classList.add('is-task-day');
                 grid.appendChild(cell);
             }
+            paintHolidayCalendar(grid,holidayList,calendarDate,items,(key)=>items.some(x=>safeDate(x.due_date)===key));
         };
         const load = () => request(SG_APP.jobsEndpoint).then(d=>{items=d.items||[];renderMetrics();renderList();renderBoard();renderCalendar();}).catch(e=>{field('sg-job-rows').textContent=e.message;});
         const resetForm = () => {form.reset();field('sg-job-id').value='';field('sg-job-priority').value='normal';field('sg-job-status').value='new';field('sg-job-message').textContent='';};
