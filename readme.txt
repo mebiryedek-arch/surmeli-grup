@@ -2,13 +2,20 @@
 Contributors: surmeligrup
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.12.4
+Stable tag: 0.12.5
 
 = 0.12.4 =
 * Fixed Android Chrome PWA installability by providing a square app icon with explicit 192x192 and 512x512 manifest sizes.
 * Improved the install button: it opens the native install prompt when available and gives clear Chrome menu instructions when the browser does not offer the prompt.
 * Added installation success feedback and cached the PWA icon in the service worker.
 * Plugin version and asset cache version updated to 0.12.4.
+
+
+= 0.12.5 =
+* Added a Settings page for creating, editing, and deleting customer types.
+* Customer create/edit forms now use the customer types defined in Settings.
+* Prevented deletion of customer types that are assigned to existing customers.
+* Preserved legacy customer type values on existing records.
 
 Sürmeli Grup işletme yönetimi uygulaması. Portal, WordPress sayfası veya shortcode oluşturmadan eklentinin özel URL rotasında çalışır.
 
