@@ -76,6 +76,7 @@ final class SG_Customers {
     }
     public static function update_customer( WP_REST_Request $r ): WP_REST_Response|WP_Error {
         global $wpdb; $id = absint( $r['id'] );
+        $r->set_param( 'id', $id );
         if ( ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM " . self::table() . " WHERE id=%d AND party_type='customer'", $id ) ) ) { return new WP_Error( 'sg_customer_missing', 'Müşteri kaydı bulunamadı.', array( 'status' => 404 ) ); }
         $data = self::payload( $r ); if ( is_wp_error( $data ) ) { return $data; }
         $duplicate = self::duplicate( $data, $id ); if ( $duplicate ) { return new WP_Error( 'sg_customer_duplicate', 'Bu telefon veya vergi numarası başka bir müşteri kaydında kullanılıyor: ' . $duplicate, array( 'status' => 409 ) ); }
