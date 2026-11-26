@@ -2,13 +2,13 @@
 Contributors: surmeligrup
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.12.3
+Stable tag: 0.12.4
 
-= 0.12.3 =
-* Clarified the optional PWA action: it now opens the installed app or offers adding it to the home screen, instead of implying that it authenticates the user.
-* Visually separated the optional mobile-app action from the primary sign-in form.
-* Branded application-specific 404 screen and account-security menu fixes retained.
-* Plugin version and asset cache version updated to 0.12.3.
+= 0.12.4 =
+* Fixed Android Chrome PWA installability by providing a square app icon with explicit 192x192 and 512x512 manifest sizes.
+* Improved the install button: it opens the native install prompt when available and gives clear Chrome menu instructions when the browser does not offer the prompt.
+* Added installation success feedback and cached the PWA icon in the service worker.
+* Plugin version and asset cache version updated to 0.12.4.
 
 Sürmeli Grup işletme yönetimi uygulaması. Portal, WordPress sayfası veya shortcode oluşturmadan eklentinin özel URL rotasında çalışır.
 
