@@ -155,6 +155,7 @@
             if (section === 'income-expense' && !permissions.has('income_expense.view')) section = 'dashboard';
             if (section === 'personnel' && !permissions.has('personnel.view')) section = 'dashboard';
             if (section === 'jobs' && !permissions.has('jobs.view')) section = 'dashboard';
+            if (section === 'settings' && !permissions.has('settings.manage')) section = 'dashboard';
             root.querySelectorAll('[data-section-view]').forEach((view) => { view.hidden = view.dataset.sectionView !== section; });
             root.querySelectorAll('.sg-sidebar [data-section]').forEach((link) => link.classList.toggle('is-active', link.dataset.section === section));
             const heading = root.querySelector('.sg-page-heading');
@@ -186,6 +187,17 @@
         const phoneField = root.querySelector('#sg-customer-phone');
         phoneField.addEventListener('input', () => { phoneField.value = formatTurkishPhone(phoneField.value); });
         editor.addEventListener('click', (event) => { if (event.target === editor) editor.close(); });
+        const kindSelect = root.querySelector('#sg-customer-kind');
+        let customerTypes = [];
+        const refreshCustomerTypes = () => apiRequest(SG_APP.restRoot + 'customer-types').then((data) => {
+            customerTypes = Array.isArray(data.items) ? data.items : [];
+            const selected = kindSelect.value;
+            kindSelect.replaceChildren();
+            const placeholder = document.createElement('option'); placeholder.value = ''; placeholder.textContent = customerTypes.length ? 'Tür seçin' : 'Önce Ayarlar bölümünden tür ekleyin'; kindSelect.appendChild(placeholder);
+            customerTypes.forEach((type) => { const option = document.createElement('option'); option.value = type.key; option.textContent = type.name; kindSelect.appendChild(option); });
+            if (selected && !customerTypes.some((type) => type.key === selected) && ['corporate','individual'].includes(selected)) { const option = document.createElement('option'); option.value = selected; option.textContent = selected === 'corporate' ? 'Eski tür: Kurumsal' : 'Eski tür: Bireysel'; kindSelect.appendChild(option); }
+            kindSelect.value = selected;
+        });
         const fields = {
             party_kind: 'sg-customer-kind', company_name: 'sg-customer-company', contact_name: 'sg-customer-contact',
             phone: 'sg-customer-phone', email: 'sg-customer-email', tax_office: 'sg-customer-tax-office',
@@ -215,7 +227,7 @@
                 });
             }).catch((error) => { customerRows.replaceChildren(); const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 7; td.className = 'sg-table-empty'; td.textContent = error.message; tr.appendChild(td); customerRows.appendChild(tr); });
         };
-        const openCustomer = (id, readOnly) => apiRequest(SG_APP.customersEndpoint + '/' + id).then((customer) => {
+        const openCustomer = (id, readOnly) => apiRequest(SG_APP.customersEndpoint + '/' + id).then((customer) => refreshCustomerTypes().then(() => customer)).then((customer) => {
             val('sg-customer-id').value = customer.id;
             Object.entries(fields).forEach(([key, fieldId]) => { val(fieldId).value = key === 'phone' && customer[key] ? formatTurkishPhone(customer[key]) : (customer[key] || (key === 'status' ? 'active' : '')); val(fieldId).disabled = readOnly; });
             val('sg-customer-editor-title').textContent = readOnly ? 'Müşteri Detayı' : 'Müşteri Düzenle';
@@ -224,7 +236,7 @@
             if (!editor.open) editor.showModal();
         }).catch((error) => { window.alert(error.message); });
         const resetEditor = () => {
-            form.reset(); val('sg-customer-id').value = ''; Object.values(fields).forEach((id) => { val(id).disabled = false; });
+            form.reset(); refreshCustomerTypes().catch(() => {}); val('sg-customer-id').value = ''; Object.values(fields).forEach((id) => { val(id).disabled = false; });
             val('sg-customer-editor-title').textContent = 'Yeni Müşteri'; val('sg-customer-save').hidden = false; message.textContent = ''; if (editor.open) editor.close();
         };
         if (permissions.has('customers.create')) root.querySelector('#sg-customer-add').addEventListener('click', () => { resetEditor(); if (!editor.open) editor.showModal(); });
@@ -241,9 +253,17 @@
                 window.setTimeout(resetEditor, 900);
             }).catch((error) => { message.textContent = error.message; }).finally(() => { val('sg-customer-save').disabled = false; });
         });
+        refreshCustomerTypes().catch(() => { message.textContent = 'Müşteri türleri yüklenemedi.'; });
         load();
     };
 
+    const setupCustomerTypeSettings = (permissions) => {
+        const rows = root.querySelector('#sg-customer-type-rows'); if (!rows || !permissions.has('settings.manage')) return;
+        const form = root.querySelector('#sg-customer-type-form'), input = root.querySelector('#sg-customer-type-name'), message = root.querySelector('#sg-customer-type-message'), save = root.querySelector('#sg-customer-type-save');
+        const endpoint = SG_APP.restRoot + 'customer-types'; let items = [];
+        const load = () => apiRequest(endpoint).then((data) => { items = Array.isArray(data.items) ? data.items : []; rows.replaceChildren(); if (!items.length) { const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=2;td.className='sg-table-empty';td.textContent='Henüz müşteri türü tanımlanmadı.';tr.appendChild(td);rows.appendChild(tr);return; } items.forEach((item) => { const tr=document.createElement('tr'),name=document.createElement('td'),actions=document.createElement('td');name.textContent=item.name;const edit=document.createElement('button');edit.type='button';edit.className='sg-button sg-button-small sg-button-light';edit.textContent='Düzenle';edit.addEventListener('click',()=>{const next=window.prompt('Müşteri türü adı',item.name);if(next===null)return;apiRequest(endpoint+'/'+encodeURIComponent(item.key),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:next})}).then(d=>{message.textContent=d.message;load();}).catch(e=>{message.textContent=e.message;});});const del=document.createElement('button');del.type='button';del.className='sg-button sg-button-small sg-button-light';del.textContent='Sil';del.addEventListener('click',()=>{if(!window.confirm('“'+item.name+'” türünü silmek istediğinizden emin misiniz?'))return;apiRequest(endpoint+'/'+encodeURIComponent(item.key),{method:'DELETE'}).then(d=>{message.textContent=d.message;load();}).catch(e=>{message.textContent=e.message;});});actions.className='sg-customer-actions';actions.append(edit,del);tr.append(name,actions);rows.appendChild(tr);}); }).catch(e=>{rows.replaceChildren();const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=2;td.className='sg-table-empty';td.textContent=e.message;tr.appendChild(td);rows.appendChild(tr);});
+        form.addEventListener('submit',(event)=>{event.preventDefault();save.disabled=true;apiRequest(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:input.value})}).then(d=>{message.textContent=d.message;input.value='';return load();}).catch(e=>{message.textContent=e.message;}).finally(()=>{save.disabled=false;});}); load();
+    };
 
     const setupSupplierModule = (permissions) => {
         if (!supplierRows || !SG_APP.suppliersEndpoint || !permissions.has('suppliers.view')) return;
@@ -759,6 +779,7 @@
             heading.hidden = !hasVisible;
         });
         setupNavigation(granted);
+        try { setupCustomerTypeSettings(granted); } catch (e) { console.error('Ayarlar modülü başlatılamadı:', e); }
         try { setupCustomerModule(granted); } catch (e) { console.error('Müşteri modülü başlatılamadı:', e); }
         try { setupSupplierModule(granted); } catch (e) { console.error('Tedarikçi modülü başlatılamadı:', e); }
         try { setupAccountsModule(granted); } catch (e) { console.error('Cari hesap modülü başlatılamadı:', e); }
