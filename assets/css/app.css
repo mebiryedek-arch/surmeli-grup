@@ -312,3 +312,13 @@ body.sg-standalone-app:has(.sg-login-page){background:#071426}
 .sg-app-not-found-home:hover{color:var(--sg-blue);text-decoration:underline}
 .sg-app-not-found-brand{margin:0 0 20px;font-weight:800;letter-spacing:2px;color:#263648}
 @media(max-width:480px){.sg-app-not-found{padding:18px 14px}.sg-app-not-found-card{padding:36px 23px 27px;border-radius:16px}.sg-app-not-found-logo{width:min(100%,205px);margin-bottom:20px}.sg-app-not-found-description{font-size:13px}}
+
+
+/* 0.12.3 - clarify and visually separate optional app installation */
+.sg-login-app-install{margin-top:25px;padding-top:19px;border-top:1px solid #e8eef4;text-align:center}
+.sg-login-app-caption{margin:0 0 10px;color:#8796a5;font-size:9px;font-weight:800;letter-spacing:1.8px}
+.sg-login-app-button{width:100%;min-height:46px;margin:0;display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid #cbdbe8;border-radius:11px;background:#fff;color:#28506e;font:inherit;font-size:12px;font-weight:750;cursor:pointer;transition:background .18s,border-color .18s,transform .18s}
+.sg-login-app-button:before{content:"＋";font-size:16px;line-height:1;color:#0878c9}
+.sg-login-app-button:hover,.sg-login-app-button:focus-visible{background:#f3f8fc;border-color:#8fb6d2;transform:translateY(-1px);outline:none}
+.sg-pwa-login-help{min-height:0;margin:9px 0 0;color:#8492a1;font-size:10px;line-height:1.55}
+@media(max-width:520px){.sg-login-app-install{margin-top:21px;padding-top:17px}.sg-login-app-button{min-height:45px}}
