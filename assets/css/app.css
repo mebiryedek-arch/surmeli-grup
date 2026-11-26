@@ -326,3 +326,15 @@ body.sg-standalone-app:has(.sg-login-page){background:#071426}
 /* Customer type settings */
 .sg-settings-panel{max-width:900px}.sg-settings-panel .sg-panel-heading{align-items:flex-start}.sg-panel-subtitle{margin:6px 0 0;color:#718096;font-size:12px}.sg-customer-type-form{display:flex;align-items:flex-end;gap:12px;padding:15px 0;border-top:1px solid #edf0f4;border-bottom:1px solid #edf0f4}.sg-customer-type-form label{display:flex;flex:1;flex-direction:column;gap:6px;color:#64748b;font-size:11px;font-weight:650}.sg-customer-type-form input{width:100%;min-height:40px;padding:9px 11px;border:1px solid #dce4ec;border-radius:8px;font:inherit;font-size:12px}.sg-settings-message{min-height:18px;color:#64748b;font-size:11px}.sg-settings-panel .sg-customer-actions{gap:7px}
 @media(max-width:640px){.sg-customer-type-form{align-items:stretch;flex-direction:column}.sg-customer-type-form .sg-button{width:100%}}
+
+/* Turkish holiday calendar colors and monthly holiday legend */
+.sg-calendar-day.is-holiday-official{background:#fee2e2!important;border-color:#fca5a5!important}
+.sg-calendar-day.is-holiday-religious{background:#dcfce7!important;border-color:#86efac!important}
+.sg-calendar-day.is-task-day:not(.is-holiday-official):not(.is-holiday-religious){background:#fef3c7!important;border-color:#fcd34d!important}
+.sg-calendar-holiday-list{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:14px;padding-top:12px;border-top:1px solid var(--sg-border)}
+.sg-calendar-holiday-item{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:7px;font-size:11px;line-height:1.4}
+.sg-calendar-holiday-item strong{white-space:nowrap}
+.sg-calendar-holiday-item.is-official{background:#fee2e2;color:#991b1b}
+.sg-calendar-holiday-item.is-religious{background:#dcfce7;color:#166534}
+.sg-calendar-holiday-empty{margin:0;color:#94a3b8;font-size:11px}
+.sg-calendar-holiday-source{align-self:center;color:#94a3b8;font-size:10px}
