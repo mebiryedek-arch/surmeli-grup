@@ -102,12 +102,23 @@ final class SG_Reports {
             $from, $to
         ), ARRAY_A );
 
+        $period_days = (int) ( ( strtotime( $to ) - strtotime( $from ) ) / DAY_IN_SECONDS ) + 1;
+        if ( $period_days <= 45 ) {
+            $trend_expression = 'r.record_date';
+            $trend_granularity = 'daily';
+        } elseif ( $period_days <= 180 ) {
+            $trend_expression = 'YEARWEEK(r.record_date,3)';
+            $trend_granularity = 'weekly';
+        } else {
+            $trend_expression = "DATE_FORMAT(r.record_date,'%%Y-%%m')";
+            $trend_granularity = 'monthly';
+        }
         $trend = $wpdb->get_results( $wpdb->prepare(
-            "SELECT DATE_FORMAT(r.record_date,'%%Y-%%m') period,
+            "SELECT {$trend_expression} period,
                     SUM(CASE WHEN r.record_type='income' THEN r.amount ELSE 0 END) income,
                     SUM(CASE WHEN r.record_type='expense' THEN r.amount ELSE 0 END) expense
              FROM {$ie} r INNER JOIN {$je} j ON j.id=r.journal_entry_id AND j.status='posted'
-             WHERE r.record_date BETWEEN %s AND %s GROUP BY DATE_FORMAT(r.record_date,'%%Y-%%m')
+             WHERE r.record_date BETWEEN %s AND %s GROUP BY {$trend_expression}
              ORDER BY period",
             $from, $to
         ), ARRAY_A );
@@ -227,7 +238,7 @@ final class SG_Reports {
                 'cash_balance' => self::money( $cash_balance ), 'bank_balance' => self::money( $bank_balance ),
             ),
             'counts' => array( 'income_expense_records' => (int) ( $totals['record_count'] ?? 0 ), 'jobs_opened' => (int) $opened, 'jobs_completed' => (int) $completed, 'jobs_ongoing' => (int) $ongoing, 'jobs_overdue' => (int) $overdue, 'jobs_cancelled' => (int) $cancelled, 'average_completion_days' => self::money( $avg_days ) ),
-            'categories' => $categories ?: array(), 'trend' => $trend ?: array(),
+            'categories' => $categories ?: array(), 'trend' => $trend ?: array(), 'trend_granularity' => $trend_granularity,
             'job_statuses' => $job_statuses ?: array(), 'personnel' => $staff ?: array(),
             'cash_accounts' => $cash_rows ?: array(), 'customers' => $customer_balances, 'suppliers' => $supplier_balances, 'comparison' => $comparison,
             'limitations' => array(
