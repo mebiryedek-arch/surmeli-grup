@@ -117,6 +117,44 @@
             return data;
         }).finally(endLoading);
     };
+    const loadMyLoginHistory = () => {
+        const dashboard = root.querySelector('[data-section-view="dashboard"]');
+        if (!dashboard || !SG_APP.restRoot) return;
+        apiRequest(SG_APP.restRoot + 'login-history/me').then((data) => {
+            let panel = root.querySelector('#sg-my-login-history');
+            if (!panel) {
+                panel = document.createElement('section');
+                panel.id = 'sg-my-login-history';
+                panel.className = 'sg-panel sg-login-history-panel';
+                dashboard.insertBefore(panel, dashboard.querySelector('.sg-dashboard-lower'));
+            }
+            const heading = document.createElement('h2');
+            heading.textContent = 'Son Giriş Bilgilerim';
+            panel.replaceChildren(heading);
+            const items = Array.isArray(data.items) ? data.items.slice(0, 5) : [];
+            if (!items.length) {
+                const empty = document.createElement('p');
+                empty.textContent = 'Henüz giriş kaydı bulunmuyor.';
+                panel.appendChild(empty);
+                return;
+            }
+            const list = document.createElement('div');
+            list.className = 'sg-login-history-list';
+            items.forEach((entry) => {
+                const row = document.createElement('div');
+                row.className = 'sg-login-history-row';
+                const date = document.createElement('strong');
+                date.textContent = entry.time || '—';
+                const detail = document.createElement('span');
+                detail.textContent = [entry.device, entry.browser, entry.os, entry.ip ? 'IP: ' + entry.ip : ''].filter(Boolean).join(' · ');
+                row.append(date, detail);
+                list.appendChild(row);
+            });
+            panel.appendChild(list);
+        }).catch(() => {});
+    };
+    loadMyLoginHistory();
+
 
 
 
