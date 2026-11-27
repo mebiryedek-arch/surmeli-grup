@@ -337,13 +337,22 @@ final class SG_Reports {
                     CASE WHEN j.completed_at IS NOT NULL THEN ROUND(TIMESTAMPDIFF(SECOND,j.created_at,j.completed_at)/86400,2) ELSE NULL END duration_days
                     FROM {$jobs} j LEFT JOIN {$personnel} p ON p.id=j.assigned_personnel_id
                     WHERE j.created_at BETWEEN %s AND %s";
-            $args = array( get_gmt_from_date( $from . ' 00:00:00' ), get_gmt_from_date( $to . ' 23:59:59' ) );
+            $start_utc = get_gmt_from_date( $from . ' 00:00:00' );
+            $end_utc = get_gmt_from_date( $to . ' 23:59:59' );
             if ( 'personnel' === $kind ) {
                 $personnel_id = absint( $request->get_param( 'personnel_id' ) );
-                if ( $personnel_id ) { $sql .= ' AND j.assigned_personnel_id=%d'; $args[] = $personnel_id; }
+                if ( ! $personnel_id ) { return new WP_Error( 'sg_report_personnel_id', 'Personel seçilmedi.', array( 'status' => 400 ) ); }
+                $sql .= " AND j.assigned_personnel_id=%d AND (
+                    (j.status='completed' AND j.completed_at BETWEEN %s AND %s)
+                    OR j.status IN ('new','assigned','in_progress','on_hold')
+                )";
+                $args = array( $personnel_id, $start_utc, $end_utc );
+            } else {
+                $sql .= ' AND j.created_at BETWEEN %s AND %s';
+                $args = array( $start_utc, $end_utc );
+                $status = sanitize_key( (string) $request->get_param( 'status' ) );
+                if ( in_array( $status, array( 'new', 'assigned', 'in_progress', 'on_hold', 'completed', 'cancelled' ), true ) ) { $sql .= ' AND j.status=%s'; $args[] = $status; }
             }
-            $status = sanitize_key( (string) $request->get_param( 'status' ) );
-            if ( in_array( $status, array( 'new', 'assigned', 'in_progress', 'on_hold', 'completed', 'cancelled' ), true ) ) { $sql .= ' AND j.status=%s'; $args[] = $status; }
             $sql .= ' ORDER BY j.created_at DESC,j.id DESC LIMIT 2000';
         } else {
             return new WP_Error( 'sg_report_kind', 'İstenen rapor detayı desteklenmiyor.', array( 'status' => 400 ) );
