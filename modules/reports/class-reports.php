@@ -199,15 +199,18 @@ final class SG_Reports {
             "SELECT status,COUNT(*) count FROM {$jobs} WHERE created_at BETWEEN %s AND %s GROUP BY status ORDER BY count DESC",
             $start_utc, $end_utc
         ), ARRAY_A );
-        $staff = $wpdb->get_results( $wpdb->prepare(
-            "SELECT p.id personnel_id,p.full_name,
-                    SUM(CASE WHEN j.status='completed' AND j.completed_at BETWEEN %s AND %s THEN 1 ELSE 0 END) completed,
-                    SUM(CASE WHEN j.status IN ('new','assigned','in_progress','on_hold') THEN 1 ELSE 0 END) ongoing,
-                    COUNT(j.id) assigned_total
-             FROM {$personnel} p LEFT JOIN {$jobs} j ON j.assigned_personnel_id=p.id
-             WHERE p.status='active' GROUP BY p.id,p.full_name ORDER BY completed DESC,ongoing DESC,p.full_name",
-            $start_utc, $end_utc
-        ), ARRAY_A );
+        $staff = array();
+        if ( SG_Permissions::current_user_can( 'personnel.view' ) ) {
+            $staff = $wpdb->get_results( $wpdb->prepare(
+                "SELECT p.id personnel_id,p.full_name,
+                        SUM(CASE WHEN j.status='completed' AND j.completed_at BETWEEN %s AND %s THEN 1 ELSE 0 END) completed,
+                        SUM(CASE WHEN j.status IN ('new','assigned','in_progress','on_hold') THEN 1 ELSE 0 END) ongoing,
+                        COUNT(j.id) assigned_total
+                 FROM {$personnel} p LEFT JOIN {$jobs} j ON j.assigned_personnel_id=p.id
+                 WHERE p.status='active' GROUP BY p.id,p.full_name ORDER BY completed DESC,ongoing DESC,p.full_name",
+                $start_utc, $end_utc
+            ), ARRAY_A );
+        }
 
         $compare_from = sanitize_text_field( (string) $request->get_param( 'compare_from' ) );
         $compare_to = sanitize_text_field( (string) $request->get_param( 'compare_to' ) );
@@ -256,6 +259,9 @@ final class SG_Reports {
         $dates = self::dates( $request );
         if ( is_wp_error( $dates ) ) { return $dates; }
         $kind = sanitize_key( (string) $request->get_param( 'kind' ) );
+        if ( 'personnel' === $kind && ! SG_Permissions::current_user_can( 'personnel.view' ) ) {
+            return new WP_Error( 'sg_report_personnel_forbidden', 'Personel raporunu görüntüleme yetkiniz bulunmuyor.', array( 'status' => 403 ) );
+        }
         $from = $dates['from']; $to = $dates['to'];
         $ie = self::t( 'income_expenses' ); $je = self::t( 'journal_entries' );
         $cat = self::t( 'categories' ); $cash = self::t( 'cash_accounts' );
@@ -306,7 +312,10 @@ final class SG_Reports {
                     ORDER BY j.entry_date,j.id,l.id LIMIT 2000";
             $args = array( $party_id, $from, $to );
         } elseif ( 'jobs' === $kind || 'personnel' === $kind ) {
-            $sql = "SELECT j.id,j.job_no,j.title,j.status,j.created_at date,j.due_date,j.completed_at,j.assigned_personnel_id,p.full_name assigned_name,
+            $staff_fields = SG_Permissions::current_user_can( 'personnel.view' )
+                ? 'j.assigned_personnel_id,p.full_name assigned_name'
+                : 'NULL assigned_personnel_id,NULL assigned_name';
+            $sql = "SELECT j.id,j.job_no,j.title,j.status,j.created_at date,j.due_date,j.completed_at,{$staff_fields},
                     CASE WHEN j.completed_at IS NOT NULL THEN ROUND(TIMESTAMPDIFF(SECOND,j.created_at,j.completed_at)/86400,2) ELSE NULL END duration_days
                     FROM {$jobs} j LEFT JOIN {$personnel} p ON p.id=j.assigned_personnel_id
                     WHERE j.created_at BETWEEN %s AND %s";
