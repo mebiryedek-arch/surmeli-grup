@@ -108,6 +108,7 @@ final class SG_App {
             wp_enqueue_script( 'sg-app' );
             wp_localize_script( 'sg-app', 'SG_APP', array(
                 'version' => SG_VERSION,
+                'logoUrl' => esc_url_raw( SG_PLUGIN_URL . 'assets/images/surmeli-grup-logo.svg' ),
                 'restRoot' => esc_url_raw( rest_url( 'sg/v1/' ) ),
                 'nonce' => wp_create_nonce( 'wp_rest' ),
                 'currency' => 'TRY',
