@@ -51,6 +51,10 @@ defined( 'ABSPATH' ) || exit;
                 <article class="sg-dashboard-card"><span class="sg-dashboard-label">Açık İşler</span><strong data-stat="jobs_open">—</strong><small>tamamlanmamış görev</small></article>
                 <article class="sg-dashboard-card sg-dashboard-card-warning"><span class="sg-dashboard-label">Geciken İşler</span><strong data-stat="jobs_overdue">—</strong><small>termin tarihi geçmiş</small></article>
             </section>
+            <section class="sg-panel sg-login-info-panel" aria-labelledby="sg-login-info-title">
+                <div class="sg-panel-heading"><div><p class="sg-card-kicker">GÜVENLİK</p><h2 id="sg-login-info-title">Son Giriş Bilgilerim</h2></div><span class="sg-panel-meta">Yalnızca kendi hesabınız</span></div>
+                <div class="sg-login-info-grid" id="sg-my-login-info" aria-live="polite"><span>Giriş bilgileriniz yükleniyor…</span></div>
+            </section>
             <section class="sg-dashboard-lower">
                 <article class="sg-panel">
                     <div class="sg-panel-heading"><div><p class="sg-card-kicker">OPERASYON</p><h2>Son İşler</h2></div><span class="sg-panel-meta" id="sg-dashboard-updated">Veriler yükleniyor</span></div>
