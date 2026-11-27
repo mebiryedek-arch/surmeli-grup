@@ -223,7 +223,14 @@
     const init = async () => {
         try {
             const permissions = await api(SG_APP.permissionsEndpoint);
-            if (!(permissions.permissions || []).includes('reports.view')) return;
+            const granted = new Set(permissions.permissions || []);
+            if (!granted.has('reports.view')) return;
+            if (!granted.has('personnel.view')) {
+                const personnelTab = root.querySelector('[data-report-tab="personnel"]');
+                const personnelPanel = root.querySelector('[data-report-panel="personnel"]');
+                if (personnelTab) personnelTab.hidden = true;
+                if (personnelPanel) personnelPanel.hidden = true;
+            }
             const preset = $('sg-report-preset');
             setPeriod('month');
             preset.addEventListener('change', () => { if (preset.value !== 'custom') setPeriod(preset.value); });
