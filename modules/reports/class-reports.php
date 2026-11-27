@@ -169,7 +169,7 @@ final class SG_Reports {
         }
 
         $party_rows = $wpdb->get_results( $wpdb->prepare(
-            "SELECT p.id,p.party_type,p.company_name,COALESCE(SUM(l.debit-l.credit),0) balance
+            "SELECT p.id,p.party_type,p.company_name,COALESCE(SUM(CASE WHEN j.id IS NOT NULL THEN l.debit-l.credit ELSE 0 END),0) balance
              FROM {$parties} p INNER JOIN {$accounts} a ON a.party_id=p.id AND a.status='active'
              LEFT JOIN {$lines} l ON l.party_account_id=a.id
              LEFT JOIN {$je} j ON j.id=l.entry_id AND j.status='posted' AND j.entry_date <= %s
