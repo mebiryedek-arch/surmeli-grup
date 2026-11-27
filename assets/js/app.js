@@ -854,6 +854,25 @@
         try { setupPersonnelModule(granted); } catch (e) { console.error('Personel modülü başlatılamadı:', e); }
         try { setupJobsModule(granted); } catch (e) { console.error('İş takibi modülü başlatılamadı:', e); }
         loadDashboard();
+        const loginInfo = root.querySelector('#sg-my-login-info');
+        if (loginInfo) {
+            apiRequest(SG_APP.restRoot + 'my-login-info').then((info) => {
+                loginInfo.replaceChildren();
+                const fields = [
+                    ['Giriş tarihi / saati', info.time ? new Intl.DateTimeFormat('tr-TR', { dateStyle: 'long', timeStyle: 'medium' }).format(new Date(info.time.replace(' ', 'T'))) : 'Kayıt bulunamadı'],
+                    ['Cihaz', info.device || '—'],
+                    ['İşletim sistemi', info.os || '—'],
+                    ['Tarayıcı', info.browser || '—'],
+                    ['IP adresi', info.ip || '—']
+                ];
+                fields.forEach(([label, value]) => {
+                    const item = document.createElement('div'); item.className = 'sg-login-info-item';
+                    const name = document.createElement('span'); name.textContent = label;
+                    const detail = document.createElement('strong'); detail.textContent = value;
+                    item.append(name, detail); loginInfo.appendChild(item);
+                });
+            }).catch(() => { loginInfo.textContent = 'Giriş bilgileri şu anda alınamıyor.'; });
+        }
         try { setupDashboardCalendar(granted); } catch (e) { console.error('Ana sayfa takvimi başlatılamadı:', e); }
     }).catch(() => {
         if (sessionState) sessionState.textContent = 'Kontrol edilemedi';
