@@ -125,6 +125,23 @@ final class SG_Reports {
             $from, $to
         ), ARRAY_A );
 
+        if ( 'daily' === $trend_granularity ) {
+            $cash_period_expression = 't.transaction_date';
+        } elseif ( 'weekly' === $trend_granularity ) {
+            $cash_period_expression = 'YEARWEEK(t.transaction_date,3)';
+        } else {
+            $cash_period_expression = "DATE_FORMAT(t.transaction_date,'%%Y-%%m')";
+        }
+        $cash_trend = $wpdb->get_results( $wpdb->prepare(
+            "SELECT {$cash_period_expression} period,
+                    SUM(CASE WHEN j.entry_type='collection' AND t.direction='in' THEN t.amount ELSE 0 END) collected,
+                    SUM(CASE WHEN j.entry_type='payment' AND t.direction='out' THEN t.amount ELSE 0 END) paid
+             FROM {$tx} t INNER JOIN {$je} j ON j.id=t.journal_entry_id AND j.status='posted'
+             WHERE t.transaction_date BETWEEN %s AND %s
+             GROUP BY {$cash_period_expression} ORDER BY period",
+            $from, $to
+        ), ARRAY_A );
+
         $collected = self::scalar(
             "SELECT COALESCE(SUM(t.amount),0) FROM {$tx} t INNER JOIN {$je} j ON j.id=t.journal_entry_id
              WHERE j.status='posted' AND j.entry_type='collection' AND t.direction='in' AND t.transaction_date BETWEEN %s AND %s",
@@ -243,7 +260,7 @@ final class SG_Reports {
                 'cash_balance' => self::money( $cash_balance ), 'bank_balance' => self::money( $bank_balance ),
             ),
             'counts' => array( 'income_expense_records' => (int) ( $totals['record_count'] ?? 0 ), 'jobs_opened' => (int) $opened, 'jobs_completed' => (int) $completed, 'jobs_ongoing' => (int) $ongoing, 'jobs_overdue' => (int) $overdue, 'jobs_cancelled' => (int) $cancelled, 'average_completion_days' => self::money( $avg_days ) ),
-            'categories' => $categories ?: array(), 'trend' => $trend ?: array(), 'trend_granularity' => $trend_granularity,
+            'categories' => $categories ?: array(), 'trend' => $trend ?: array(), 'cash_trend' => $cash_trend ?: array(), 'trend_granularity' => $trend_granularity,
             'job_statuses' => $job_statuses ?: array(), 'personnel' => $staff ?: array(),
             'cash_accounts' => $cash_rows ?: array(), 'customers' => $customer_balances, 'suppliers' => $supplier_balances, 'comparison' => $comparison,
             'limitations' => array(
