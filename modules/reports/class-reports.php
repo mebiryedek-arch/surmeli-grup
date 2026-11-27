@@ -352,7 +352,11 @@ final class SG_Reports {
         fputcsv( $stream, $headers, ';' );
         foreach ( $items as $item ) {
             $row = array();
-            foreach ( $headers as $header ) { $row[] = $item[ $header ] ?? ''; }
+            foreach ( $headers as $header ) {
+                $value = $item[ $header ] ?? '';
+                if ( is_string( $value ) && preg_match( '/^\\s*[=+@\\-]/', $value ) ) { $value = "'" . $value; }
+                $row[] = $value;
+            }
             fputcsv( $stream, $row, ';' );
         }
         rewind( $stream );
