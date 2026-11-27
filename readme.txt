@@ -1,5 +1,12 @@
 == Changelog ==
 
+= 0.13.1 =
+* Added successful login history for all WordPress and portal logins.
+* Administrators can review the latest 500 login events in WordPress; each user retains up to 20 recent events.
+* The portal dashboard shows only the signed-in user's own recent login details.
+* Captures local date/time, device type, browser, operating system and direct client IP; no settings are added.
+
+
 = 0.13.0 =
 * Added read-only management reports for income, expenses, profit/loss, cash/bank, customer/supplier balances, jobs and personnel.
 * Added date presets, previous-period comparison, interactive chart drill-down, CSV export and A4 print/PDF preview.
