@@ -379,6 +379,10 @@ final class SG_Reports {
                 $items[] = array( 'bölüm' => 'Aylık trend', 'kalem' => $row['period'] . ' · gelir', 'değer' => $row['income'] );
                 $items[] = array( 'bölüm' => 'Aylık trend', 'kalem' => $row['period'] . ' · gider', 'değer' => $row['expense'] );
             }
+            foreach ( $data['cash_trend'] as $row ) {
+                $items[] = array( 'bölüm' => 'Tahsilat ve ödeme', 'kalem' => $row['period'] . ' · tahsilat', 'değer' => $row['collected'] );
+                $items[] = array( 'bölüm' => 'Tahsilat ve ödeme', 'kalem' => $row['period'] . ' · ödeme', 'değer' => $row['paid'] );
+            }
         } else {
             $detail = self::drilldown( $request );
             if ( is_wp_error( $detail ) ) { return $detail; }
