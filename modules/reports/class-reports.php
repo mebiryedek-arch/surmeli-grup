@@ -190,7 +190,7 @@ final class SG_Reports {
 
         $opened = self::scalar( "SELECT COUNT(*) FROM {$jobs} WHERE created_at BETWEEN %s AND %s", array( $start_utc, $end_utc ) );
         $completed = self::scalar( "SELECT COUNT(*) FROM {$jobs} WHERE completed_at BETWEEN %s AND %s AND status='completed'", array( $start_utc, $end_utc ) );
-        $ongoing = self::scalar( "SELECT COUNT(*) FROM {$jobs} WHERE created_at <= %s AND status IN ('new','assigned','in_progress','on_hold')", array( $end ) );
+        $ongoing = self::scalar( "SELECT COUNT(*) FROM {$jobs} WHERE created_at <= %s AND status IN ('new','assigned','in_progress','on_hold')", array( $end_utc ) );
         $overdue = self::scalar( "SELECT COUNT(*) FROM {$jobs} WHERE due_date < %s AND status IN ('new','assigned','in_progress','on_hold')", array( $end ) );
         $cancelled = self::scalar( "SELECT COUNT(*) FROM {$jobs} WHERE updated_at BETWEEN %s AND %s AND status='cancelled'", array( $start_utc, $end_utc ) );
         $avg_days = self::scalar( "SELECT COALESCE(AVG(TIMESTAMPDIFF(SECOND,created_at,completed_at))/86400,0) FROM {$jobs} WHERE completed_at BETWEEN %s AND %s AND status='completed'", array( $start_utc, $end_utc ) );
