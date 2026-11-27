@@ -132,6 +132,7 @@ final class SG_App {
             ) );
             echo '<script>window.SG_APP=' . wp_json_encode( array(
                 'version' => SG_VERSION,
+                'logoUrl' => esc_url_raw( SG_PLUGIN_URL . 'assets/images/surmeli-grup-logo.svg' ),
                 'restRoot' => esc_url_raw( rest_url( 'sg/v1/' ) ),
                 'nonce' => wp_create_nonce( 'wp_rest' ),
                 'currency' => 'TRY',
@@ -149,6 +150,9 @@ final class SG_App {
                 'jobsEndpoint' => esc_url_raw( rest_url( 'sg/v1/jobs' ) ),
                 'jobOptionsEndpoint' => esc_url_raw( rest_url( 'sg/v1/job-options' ) ),
                 'personnelEndpoint' => esc_url_raw( rest_url( 'sg/v1/personnel' ) ),
+                'reportsEndpoint' => esc_url_raw( rest_url( 'sg/v1/reports' ) ),
+                'reportsDrilldownEndpoint' => esc_url_raw( rest_url( 'sg/v1/reports/drilldown' ) ),
+                'reportsExportEndpoint' => esc_url_raw( rest_url( 'sg/v1/reports/export' ) ),
             ) ) . ';</script>';
             require SG_PLUGIN_DIR . 'app/templates/app-shell.php';
             echo '<script src="' . esc_url( SG_PLUGIN_URL . 'assets/js/app.js?ver=' . SG_VERSION ) . '" defer></script>';
