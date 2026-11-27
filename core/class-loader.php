@@ -21,6 +21,7 @@ require_once SG_PLUGIN_DIR . 'modules/income-expense/class-income-expense.php';
 require_once SG_PLUGIN_DIR . 'modules/personnel/class-personnel.php';
 require_once SG_PLUGIN_DIR . 'modules/jobs/class-jobs.php';
 require_once SG_PLUGIN_DIR . 'modules/reports/class-reports.php';
+require_once SG_PLUGIN_DIR . 'modules/login-audit/class-login-audit.php';
 
 final class SG_Loader {
     public static function init(): void {
@@ -40,6 +41,7 @@ final class SG_Loader {
         SG_Personnel::init();
         SG_Jobs::init();
         SG_Reports::init();
+        SG_Login_Audit::init();
         add_action( 'admin_init', array( __CLASS__, 'maybe_upgrade_database' ), 5 );
     }
 
