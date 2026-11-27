@@ -1,5 +1,12 @@
 == Changelog ==
 
+= 0.14.0 =
+* Added successful login history for all WordPress users (last 50 entries per user).
+* Added an administrator-only Users > Login Records screen showing each user's latest login time, device, operating system, browser and IP address.
+* Added a personal last-login summary to the portal dashboard; users can only retrieve their own record.
+* Login audit records are stored in user metadata; no business or financial tables are changed.
+
+
 = 0.13.0 =
 * Added read-only management reports for income, expenses, profit/loss, cash/bank, customer/supplier balances, jobs and personnel.
 * Added date presets, previous-period comparison, interactive chart drill-down, CSV export and A4 print/PDF preview.
