@@ -18,6 +18,7 @@ final class SG_Admin {
             'dashicons-chart-area',
             58
         );
+        add_submenu_page( 'sg-system', __( 'Kullanıcı Giriş Kayıtları', 'surmeli-grup' ), __( 'Giriş Kayıtları', 'surmeli-grup' ), 'manage_options', 'sg-login-history', array( 'SG_Login_Audit', 'render_admin_page' ) );
     }
 
     public static function migration_notice(): void {
