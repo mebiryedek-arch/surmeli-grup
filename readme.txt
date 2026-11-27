@@ -17,7 +17,7 @@
 Contributors: surmeligrup
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.12.6
+Stable tag: 0.14.0
 
 = 0.12.4 =
 * Fixed Android Chrome PWA installability by providing a square app icon with explicit 192x192 and 512x512 manifest sizes.
