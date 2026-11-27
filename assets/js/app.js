@@ -217,6 +217,7 @@
             if (section === 'income-expense' && !permissions.has('income_expense.view')) section = 'dashboard';
             if (section === 'personnel' && !permissions.has('personnel.view')) section = 'dashboard';
             if (section === 'jobs' && !permissions.has('jobs.view')) section = 'dashboard';
+            if (section === 'reports' && !permissions.has('reports.view')) section = 'dashboard';
             if (section === 'settings' && !permissions.has('settings.manage')) section = 'dashboard';
             root.querySelectorAll('[data-section-view]').forEach((view) => { view.hidden = view.dataset.sectionView !== section; });
             root.querySelectorAll('.sg-sidebar [data-section]').forEach((link) => link.classList.toggle('is-active', link.dataset.section === section));
