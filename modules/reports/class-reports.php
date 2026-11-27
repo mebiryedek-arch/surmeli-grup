@@ -70,6 +70,8 @@ final class SG_Reports {
         $to = $dates['to'];
         $start = $from . ' 00:00:00';
         $end = $to . ' 23:59:59';
+        $start_utc = get_gmt_from_date( $start );
+        $end_utc = get_gmt_from_date( $end );
         $ie = self::t( 'income_expenses' );
         $je = self::t( 'journal_entries' );
         $cat = self::t( 'categories' );
@@ -186,16 +188,16 @@ final class SG_Reports {
             }
         }
 
-        $opened = self::scalar( "SELECT COUNT(*) FROM {$jobs} WHERE created_at BETWEEN %s AND %s", array( $start, $end ) );
-        $completed = self::scalar( "SELECT COUNT(*) FROM {$jobs} WHERE completed_at BETWEEN %s AND %s AND status='completed'", array( $start, $end ) );
+        $opened = self::scalar( "SELECT COUNT(*) FROM {$jobs} WHERE created_at BETWEEN %s AND %s", array( $start_utc, $end_utc ) );
+        $completed = self::scalar( "SELECT COUNT(*) FROM {$jobs} WHERE completed_at BETWEEN %s AND %s AND status='completed'", array( $start_utc, $end_utc ) );
         $ongoing = self::scalar( "SELECT COUNT(*) FROM {$jobs} WHERE created_at <= %s AND status IN ('new','assigned','in_progress','on_hold')", array( $end ) );
         $overdue = self::scalar( "SELECT COUNT(*) FROM {$jobs} WHERE due_date < %s AND status IN ('new','assigned','in_progress','on_hold')", array( $end ) );
-        $cancelled = self::scalar( "SELECT COUNT(*) FROM {$jobs} WHERE updated_at BETWEEN %s AND %s AND status='cancelled'", array( $start, $end ) );
-        $avg_days = self::scalar( "SELECT COALESCE(AVG(TIMESTAMPDIFF(SECOND,created_at,completed_at))/86400,0) FROM {$jobs} WHERE completed_at BETWEEN %s AND %s AND status='completed'", array( $start, $end ) );
+        $cancelled = self::scalar( "SELECT COUNT(*) FROM {$jobs} WHERE updated_at BETWEEN %s AND %s AND status='cancelled'", array( $start_utc, $end_utc ) );
+        $avg_days = self::scalar( "SELECT COALESCE(AVG(TIMESTAMPDIFF(SECOND,created_at,completed_at))/86400,0) FROM {$jobs} WHERE completed_at BETWEEN %s AND %s AND status='completed'", array( $start_utc, $end_utc ) );
 
         $job_statuses = $wpdb->get_results( $wpdb->prepare(
             "SELECT status,COUNT(*) count FROM {$jobs} WHERE created_at BETWEEN %s AND %s GROUP BY status ORDER BY count DESC",
-            $start, $end
+            $start_utc, $end_utc
         ), ARRAY_A );
         $staff = $wpdb->get_results( $wpdb->prepare(
             "SELECT p.id personnel_id,p.full_name,
@@ -204,7 +206,7 @@ final class SG_Reports {
                     COUNT(j.id) assigned_total
              FROM {$personnel} p LEFT JOIN {$jobs} j ON j.assigned_personnel_id=p.id
              WHERE p.status='active' GROUP BY p.id,p.full_name ORDER BY completed DESC,ongoing DESC,p.full_name",
-            $start, $end
+            $start_utc, $end_utc
         ), ARRAY_A );
 
         $compare_from = sanitize_text_field( (string) $request->get_param( 'compare_from' ) );
@@ -308,7 +310,7 @@ final class SG_Reports {
                     CASE WHEN j.completed_at IS NOT NULL THEN ROUND(TIMESTAMPDIFF(SECOND,j.created_at,j.completed_at)/86400,2) ELSE NULL END duration_days
                     FROM {$jobs} j LEFT JOIN {$personnel} p ON p.id=j.assigned_personnel_id
                     WHERE j.created_at BETWEEN %s AND %s";
-            $args = array( $from . ' 00:00:00', $to . ' 23:59:59' );
+            $args = array( get_gmt_from_date( $from . ' 00:00:00' ), get_gmt_from_date( $to . ' 23:59:59' ) );
             if ( 'personnel' === $kind ) {
                 $personnel_id = absint( $request->get_param( 'personnel_id' ) );
                 if ( $personnel_id ) { $sql .= ' AND j.assigned_personnel_id=%d'; $args[] = $personnel_id; }
