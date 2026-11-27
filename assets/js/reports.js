@@ -176,7 +176,7 @@
             showDetail(x.type === 'Tahsilat' ? 'collection' : 'payment', x.period + ' · ' + x.type);
         });
         renderBars('sg-report-customers', (data.customers || []).slice(0, 12), (x) => x.name + ' · ' + x.side, (x) => x.balance, (x) => showDetail('party', x.name + ' · Cari Ekstre', { party_id: x.party_id }));
-        renderBars('sg-report-suppliers', (data.suppliers || []).slice(0, 12), (x) => x.name, (x) => x.balance, (x) => showDetail('party', x.name + ' · Cari Ekstre', { party_id: x.party_id }));
+        renderBars('sg-report-suppliers', (data.suppliers || []).slice(0, 12), (x) => x.name + ' · ' + x.side, (x) => x.balance, (x) => showDetail('party', x.name + ' · Cari Ekstre', { party_id: x.party_id }));
         const op = $('sg-report-operations'); op.replaceChildren();
         [['Açılan işler', c.jobs_opened], ['Tamamlanan işler', c.jobs_completed], ['Devam eden işler', c.jobs_ongoing], ['Geciken işler', c.jobs_overdue], ['İptal edilen işler', c.jobs_cancelled], ['Ortalama tamamlanma süresi', number(c.average_completion_days) + ' gün']].forEach(([label, val]) => {
             const row = document.createElement('div'); row.className = 'sg-report-comparison-item'; const span = document.createElement('span'); span.textContent = label; const strong = document.createElement('strong'); strong.textContent = val; row.append(span, strong); op.appendChild(row);
