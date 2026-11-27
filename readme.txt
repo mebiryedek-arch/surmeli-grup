@@ -1,3 +1,11 @@
+== Changelog ==
+
+= 0.13.0 =
+* Added read-only management reports for income, expenses, profit/loss, cash/bank, customer/supplier balances, jobs and personnel.
+* Added date presets, previous-period comparison, interactive chart drill-down, CSV export and A4 print/PDF preview.
+* Report queries use posted financial entries and existing business records; no financial records are modified.
+* Personnel report details require the personnel viewing permission. Due-date analytics remain unavailable until due dates are part of the underlying records.
+
 === Sürmeli Grup İşletme Yönetimi ===
 Contributors: surmeligrup
 Requires at least: 6.4
