@@ -157,6 +157,24 @@ final class SG_Reports {
             else { $cash_balance += (float) $row['balance']; }
         }
 
+        $party_rows = $wpdb->get_results( $wpdb->prepare(
+            "SELECT p.id,p.party_type,p.company_name,COALESCE(SUM(l.debit-l.credit),0) balance
+             FROM {$parties} p INNER JOIN {$accounts} a ON a.party_id=p.id AND a.status='active'
+             LEFT JOIN {$lines} l ON l.party_account_id=a.id
+             LEFT JOIN {$je} j ON j.id=l.entry_id AND j.status='posted' AND j.entry_date <= %s
+             WHERE p.status='active' GROUP BY p.id,p.party_type,p.company_name ORDER BY ABS(balance) DESC LIMIT 100",
+            $to
+        ), ARRAY_A );
+        $customer_balances = array(); $supplier_balances = array();
+        foreach ( $party_rows ?: array() as $party_row ) {
+            $net = (float) $party_row['balance'];
+            if ( 'customer' === $party_row['party_type'] && $net > 0 ) {
+                $customer_balances[] = array( 'party_id' => (int) $party_row['id'], 'name' => $party_row['company_name'], 'balance' => self::money( $net ) );
+            } elseif ( 'supplier' === $party_row['party_type'] && $net < 0 ) {
+                $supplier_balances[] = array( 'party_id' => (int) $party_row['id'], 'name' => $party_row['company_name'], 'balance' => self::money( abs( $net ) ) );
+            }
+        }
+
         $opened = self::scalar( "SELECT COUNT(*) FROM {$jobs} WHERE created_at BETWEEN %s AND %s", array( $start, $end ) );
         $completed = self::scalar( "SELECT COUNT(*) FROM {$jobs} WHERE completed_at BETWEEN %s AND %s AND status='completed'", array( $start, $end ) );
         $ongoing = self::scalar( "SELECT COUNT(*) FROM {$jobs} WHERE created_at <= %s AND status IN ('new','assigned','in_progress','on_hold')", array( $end ) );
@@ -211,7 +229,7 @@ final class SG_Reports {
             'counts' => array( 'income_expense_records' => (int) ( $totals['record_count'] ?? 0 ), 'jobs_opened' => (int) $opened, 'jobs_completed' => (int) $completed, 'jobs_ongoing' => (int) $ongoing, 'jobs_overdue' => (int) $overdue, 'jobs_cancelled' => (int) $cancelled, 'average_completion_days' => self::money( $avg_days ) ),
             'categories' => $categories ?: array(), 'trend' => $trend ?: array(),
             'job_statuses' => $job_statuses ?: array(), 'personnel' => $staff ?: array(),
-            'cash_accounts' => $cash_rows ?: array(), 'comparison' => $comparison,
+            'cash_accounts' => $cash_rows ?: array(), 'customers' => $customer_balances, 'suppliers' => $supplier_balances, 'comparison' => $comparison,
             'limitations' => array(
                 'due_dates' => 'Cari hesap ve ödeme kayıtlarında vade tarihi alanı bulunmadığı için vadesi geçmiş alacaklar ve yaklaşan ödemeler hesaplanmıyor.',
                 'income_sources' => 'Gelir/gider kayıtlarında ayrı kaynak alanı bulunmadığından kategori bazlı rapor sunuluyor.',
