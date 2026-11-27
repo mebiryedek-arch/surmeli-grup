@@ -336,7 +336,7 @@ final class SG_Reports {
             $sql = "SELECT j.id,j.job_no,j.title,j.status,j.created_at date,j.due_date,j.completed_at,{$staff_fields},
                     CASE WHEN j.completed_at IS NOT NULL THEN ROUND(TIMESTAMPDIFF(SECOND,j.created_at,j.completed_at)/86400,2) ELSE NULL END duration_days
                     FROM {$jobs} j LEFT JOIN {$personnel} p ON p.id=j.assigned_personnel_id
-                    WHERE j.created_at BETWEEN %s AND %s";
+                    WHERE 1=1";
             $start_utc = get_gmt_from_date( $from . ' 00:00:00' );
             $end_utc = get_gmt_from_date( $to . ' 23:59:59' );
             if ( 'personnel' === $kind ) {
