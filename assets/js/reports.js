@@ -144,7 +144,13 @@
         const statuses = data.job_statuses || [];
         const statusNames = { new: 'Yeni', assigned: 'Atandı', in_progress: 'Devam ediyor', on_hold: 'Beklemede', completed: 'Tamamlandı', cancelled: 'İptal' };
         renderBars('sg-report-statuses', statuses, (x) => statusNames[x.status] || x.status, (x) => x.count, (x) => showDetail('jobs', statusNames[x.status] || x.status, { status: x.status }), number);
-        renderBars('sg-report-staff', (data.personnel || []).filter((x) => Number(x.completed) + Number(x.ongoing) > 0).slice(0, 8), (x) => x.full_name + ' · ' + x.completed + ' tamamlandı', (x) => x.completed, (x) => showDetail('personnel', x.full_name, { personnel_id: x.personnel_id }), number);
+        const staffChartRows = (data.personnel || []).filter((x) => Number(x.completed) + Number(x.ongoing) > 0).slice(0, 30).flatMap((x) => [
+            { personnel_id: x.personnel_id, full_name: x.full_name, type: 'Tamamlanan', value: Number(x.completed) },
+            { personnel_id: x.personnel_id, full_name: x.full_name, type: 'Açık iş yükü', value: Number(x.ongoing) }
+        ]);
+        const staffLabel = (x) => x.full_name + ' · ' + x.type;
+        const staffClick = (x) => showDetail('personnel', x.full_name + ' · Görev dökümü', { personnel_id: x.personnel_id });
+        renderBars('sg-report-staff', staffChartRows.slice(0, 16), staffLabel, (x) => x.value, staffClick, number);
         renderBars('sg-report-profit-trend', trend, (x) => x.period, (x) => Number(x.income) - Number(x.expense), null);
         const comparison = data.comparison;
         const comp = $('sg-report-profit-compare'); comp.replaceChildren();
@@ -175,7 +181,7 @@
         [['Açılan işler', c.jobs_opened], ['Tamamlanan işler', c.jobs_completed], ['Devam eden işler', c.jobs_ongoing], ['Geciken işler', c.jobs_overdue], ['İptal edilen işler', c.jobs_cancelled], ['Ortalama tamamlanma süresi', number(c.average_completion_days) + ' gün']].forEach(([label, val]) => {
             const row = document.createElement('div'); row.className = 'sg-report-comparison-item'; const span = document.createElement('span'); span.textContent = label; const strong = document.createElement('strong'); strong.textContent = val; row.append(span, strong); op.appendChild(row);
         });
-        renderBars('sg-report-personnel', (data.personnel || []).slice(0, 30), (x) => x.full_name + ' · ' + x.completed + ' tamamlandı / ' + x.ongoing + ' açık', (x) => x.completed, (x) => showDetail('personnel', x.full_name, { personnel_id: x.personnel_id }), number);
+        renderBars('sg-report-personnel', staffChartRows, staffLabel, (x) => x.value, staffClick, number);
         const limits = $('sg-report-limitations'); limits.replaceChildren();
         Object.values(data.limitations || {}).forEach((message) => { const p = document.createElement('p'); p.textContent = message; limits.appendChild(p); });
         const cmp = $('sg-report-compare').checked && comparison;
