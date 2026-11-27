@@ -266,6 +266,7 @@ final class SG_Reports {
             'limitations' => array(
                 'due_dates' => 'Cari hesap ve ödeme kayıtlarında vade tarihi alanı bulunmadığı için vadesi geçmiş alacaklar ve yaklaşan ödemeler hesaplanmıyor.',
                 'income_sources' => 'Gelir/gider kayıtlarında ayrı kaynak alanı bulunmadığından kategori bazlı rapor sunuluyor.',
+                'personnel_hours' => 'Personel çalışma saati veya puantaj kaydı bulunmadığından saat bazlı mesai raporu hesaplanmıyor; görev yükü ve tamamlanma performansı gösteriliyor.',
                 'cash_date' => 'Kasa ve banka bakiyeleri seçilen bitiş tarihi itibarıyla hesaplanır.',
             ),
         ), 200 );
