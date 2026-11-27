@@ -200,6 +200,59 @@ defined( 'ABSPATH' ) || exit;
                     <div id="sg-job-detail" hidden><h3 class="sg-account-history-title">Notlar ve aktivite</h3><div id="sg-job-notes"></div><form id="sg-job-note-form" class="sg-job-note-form"><textarea id="sg-job-note" rows="2" placeholder="Göreve not ekleyin…"></textarea><button type="submit" class="sg-button sg-button-primary">Not ekle</button></form><div id="sg-job-history" class="sg-job-history"></div></div>
                 </dialog>
             </section>
+            <section class="sg-section-view sg-reports" data-section-view="reports" hidden>
+                <div class="sg-module-heading"><div><p class="sg-eyebrow">YÖNETİM / ANALİZ</p><h1>Raporlar</h1><p>Finansal ve operasyonel performansı gerçek kayıtlar üzerinden inceleyin.</p></div><div class="sg-report-actions"><button type="button" class="sg-button sg-button-light" id="sg-report-csv">CSV / Excel</button><button type="button" class="sg-button sg-button-primary" id="sg-report-pdf">PDF Önizleme</button></div></div>
+                <div class="sg-panel sg-report-filters">
+                    <label><span>Dönem</span><select id="sg-report-preset"><option value="month">Bu ay</option><option value="today">Bugün</option><option value="yesterday">Dün</option><option value="week">Bu hafta</option><option value="prev_month">Geçen ay</option><option value="quarter">Bu çeyrek</option><option value="year">Bu yıl</option><option value="prev_year">Geçen yıl</option><option value="custom">Özel tarih aralığı</option></select></label>
+                    <label><span>Başlangıç</span><input type="date" id="sg-report-from"></label>
+                    <label><span>Bitiş</span><input type="date" id="sg-report-to"></label>
+                    <label class="sg-report-compare"><input type="checkbox" id="sg-report-compare" checked><span>Önceki eşit dönemle karşılaştır</span></label>
+                    <button type="button" class="sg-button sg-button-primary" id="sg-report-apply">Raporu Getir</button>
+                    <p class="sg-report-message" id="sg-report-message" role="status" aria-live="polite"></p>
+                </div>
+                <div class="sg-report-kpis" id="sg-report-kpis">
+                    <article><span>Toplam gelir</span><strong id="sg-r-income">—</strong><small>Seçilen dönem</small></article>
+                    <article><span>Toplam gider</span><strong id="sg-r-expense">—</strong><small>Seçilen dönem</small></article>
+                    <article><span>Net kâr / zarar</span><strong id="sg-r-profit">—</strong><small id="sg-r-margin">Kârlılık: —</small></article>
+                    <article><span>Tahsil edilen</span><strong id="sg-r-collected">—</strong><small>Seçilen dönem</small></article>
+                    <article><span>Bekleyen alacak</span><strong id="sg-r-receivable">—</strong><small>Bitiş tarihi itibarıyla</small></article>
+                    <article><span>Toplam borç</span><strong id="sg-r-payable">—</strong><small>Tedarikçi bakiyesi</small></article>
+                    <article><span>Kasa bakiyesi</span><strong id="sg-r-cash">—</strong><small>Bitiş tarihi itibarıyla</small></article>
+                    <article><span>Banka bakiyesi</span><strong id="sg-r-bank">—</strong><small>Bitiş tarihi itibarıyla</small></article>
+                    <article><span>Ödeme</span><strong id="sg-r-paid">—</strong><small>Seçilen dönem</small></article>
+                    <article><span>Açılan işler</span><strong id="sg-r-opened">—</strong><small>Seçilen dönem</small></article>
+                </div>
+                <div class="sg-report-tabs" role="tablist" aria-label="Rapor türleri">
+                    <button type="button" class="is-active" data-report-tab="overview">Yönetici Özeti</button>
+                    <button type="button" data-report-tab="income">Gelir</button>
+                    <button type="button" data-report-tab="expense">Gider</button>
+                    <button type="button" data-report-tab="profit">Kâr-Zarar</button>
+                    <button type="button" data-report-tab="cash">Kasa ve Banka</button>
+                    <button type="button" data-report-tab="accounts">Cari Hesaplar</button>
+                    <button type="button" data-report-tab="operations">Operasyon</button>
+                    <button type="button" data-report-tab="personnel">Personel</button>
+                </div>
+                <div class="sg-report-content" data-report-panel="overview">
+                    <div class="sg-report-chart-grid">
+                        <article class="sg-panel"><div class="sg-panel-heading"><div><p class="sg-card-kicker">FİNANS</p><h2>Gelir / Gider Trendi</h2></div><span class="sg-panel-meta">Aylık</span></div><div id="sg-report-trend" class="sg-report-bars"></div></article>
+                        <article class="sg-panel"><div class="sg-panel-heading"><div><p class="sg-card-kicker">OPERASYON</p><h2>İş Durumları</h2></div></div><div id="sg-report-statuses" class="sg-report-bars"></div></article>
+                    </div>
+                    <div class="sg-report-chart-grid">
+                        <article class="sg-panel"><div class="sg-panel-heading"><div><p class="sg-card-kicker">GELİR / GİDER</p><h2>Kategori Dağılımı</h2></div></div><div id="sg-report-categories" class="sg-report-bars"></div></article>
+                        <article class="sg-panel"><div class="sg-panel-heading"><div><p class="sg-card-kicker">EKİP</p><h2>Personel Performansı</h2></div></div><div id="sg-report-staff" class="sg-report-bars"></div></article>
+                    </div>
+                </div>
+                <div class="sg-report-content" data-report-panel="income" hidden><div class="sg-panel"><div class="sg-panel-heading"><div><p class="sg-card-kicker">GELİR ANALİZİ</p><h2>Gelir kategorileri</h2></div></div><div id="sg-report-income-cats" class="sg-report-bars"></div></div></div>
+                <div class="sg-report-content" data-report-panel="expense" hidden><div class="sg-panel"><div class="sg-panel-heading"><div><p class="sg-card-kicker">GİDER ANALİZİ</p><h2>Gider kategorileri</h2></div></div><div id="sg-report-expense-cats" class="sg-report-bars"></div></div></div>
+                <div class="sg-report-content" data-report-panel="profit" hidden><div class="sg-panel"><div class="sg-panel-heading"><div><p class="sg-card-kicker">KÂR-ZARAR</p><h2>Dönem sonucu ve karşılaştırma</h2></div></div><div id="sg-report-profit-compare" class="sg-report-comparison"></div><div id="sg-report-profit-trend" class="sg-report-bars"></div></div></div>
+                <div class="sg-report-content" data-report-panel="cash" hidden><div class="sg-panel"><div class="sg-panel-heading"><div><p class="sg-card-kicker">NAKİT YÖNETİMİ</p><h2>Kasa ve banka hesapları</h2></div></div><div id="sg-report-cash-accounts" class="sg-report-bars"></div><p class="sg-footnote">Hesap bakiyeleri seçilen bitiş tarihi itibarıyla muhasebeleştirilmiş fişlerden hesaplanır.</p></div></div>
+                <div class="sg-report-content" data-report-panel="accounts" hidden><div class="sg-panel"><div class="sg-panel-heading"><div><p class="sg-card-kicker">CARİ RİSK</p><h2>Müşteri alacakları ve tedarikçi borçları</h2></div></div><div class="sg-report-chart-grid"><div><h3>Müşteri bakiyeleri</h3><div id="sg-report-customers" class="sg-report-bars"></div></div><div><h3>Tedarikçi bakiyeleri</h3><div id="sg-report-suppliers" class="sg-report-bars"></div></div></div><p class="sg-report-warning">Vade tarihleri mevcut cari kayıtlarında tutulmadığı için yaşlandırma ve vadesi yaklaşan ödeme listesi sunulmamaktadır.</p></div></div>
+                <div class="sg-report-content" data-report-panel="operations" hidden><div class="sg-panel"><div class="sg-panel-heading"><div><p class="sg-card-kicker">İŞ TAKİBİ</p><h2>Operasyon göstergeleri</h2></div></div><div id="sg-report-operations" class="sg-report-comparison"></div><p class="sg-footnote">Tamamlanma süresi, işin oluşturulma ve tamamlanma zamanları arasından hesaplanır.</p></div></div>
+                <div class="sg-report-content" data-report-panel="personnel" hidden><div class="sg-panel"><div class="sg-panel-heading"><div><p class="sg-card-kicker">EKİP ANALİZİ</p><h2>Personel bazında iş performansı</h2></div></div><div id="sg-report-personnel" class="sg-report-bars"></div></div></div>
+                <section class="sg-panel sg-report-drilldown" id="sg-report-detail" hidden><div class="sg-panel-heading"><div><p class="sg-card-kicker">DETAYLI KAYIT</p><h2 id="sg-report-detail-title">İşlem dökümü</h2></div><button type="button" class="sg-button sg-button-light" id="sg-report-detail-close">Kapat</button></div><div class="sg-table-wrap"><table class="sg-dashboard-table"><thead id="sg-report-detail-head"></thead><tbody id="sg-report-detail-body"></tbody></table></div><p class="sg-footnote" id="sg-report-detail-count"></p></section>
+                <div class="sg-report-limitations" id="sg-report-limitations"></div>
+                <dialog id="sg-report-pdf-dialog" class="sg-report-dialog"><div class="sg-panel-heading"><h2>PDF Rapor Önizleme</h2><div><button type="button" class="sg-button sg-button-light" id="sg-report-pdf-close">Kapat</button><button type="button" class="sg-button sg-button-primary" id="sg-report-pdf-print">Yazdır / PDF Kaydet</button></div></div><div id="sg-report-pdf-preview"></div></dialog>
+            </section>
             <section class="sg-section-view" data-section-view="settings" hidden>
                 <div class="sg-module-heading"><div><p class="sg-eyebrow">YÖNETİM / AYARLAR</p><h1>Uygulama Ayarları</h1><p>Müşteri kartlarında kullanılacak türleri buradan tanımlayın.</p></div></div>
                 <div class="sg-panel sg-settings-panel">
