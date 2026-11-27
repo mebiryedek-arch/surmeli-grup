@@ -271,7 +271,18 @@ final class SG_Reports {
             $args = array( $from, $to );
             if ( 'collection' === $kind ) { $sql .= " AND j.entry_type='collection' AND t.direction='in'"; }
             if ( 'payment' === $kind ) { $sql .= " AND j.entry_type='payment' AND t.direction='out'"; }
+            $cash_account_id = absint( $request->get_param( 'cash_account_id' ) );
+            if ( $cash_account_id ) { $sql .= ' AND t.cash_account_id=%d'; $args[] = $cash_account_id; }
             $sql .= ' ORDER BY t.transaction_date DESC,t.id DESC LIMIT 2000';
+        } elseif ( 'accounts' === $kind ) {
+            $sql = "SELECT p.id party_id,p.party_type,p.company_name,
+                    COALESCE(SUM(CASE WHEN j.id IS NOT NULL THEN l.debit-l.credit ELSE 0 END),0) net_balance
+                    FROM {$parties} p INNER JOIN {$accounts} a ON a.party_id=p.id AND a.status='active'
+                    LEFT JOIN {$lines} l ON l.party_account_id=a.id
+                    LEFT JOIN {$je} j ON j.id=l.entry_id AND j.status='posted' AND j.entry_date <= %s
+                    WHERE p.status='active' GROUP BY p.id,p.party_type,p.company_name
+                    HAVING net_balance<>0 ORDER BY ABS(net_balance) DESC LIMIT 2000";
+            $args = array( $to );
         } elseif ( 'party' === $kind ) {
             $party_id = absint( $request->get_param( 'party_id' ) );
             if ( ! $party_id ) { return new WP_Error( 'sg_report_party', 'Cari hesap seçilmedi.', array( 'status' => 400 ) ); }
@@ -305,9 +316,23 @@ final class SG_Reports {
 
     public static function export( WP_REST_Request $request ): WP_REST_Response|WP_Error {
         $kind = sanitize_key( (string) $request->get_param( 'kind' ) );
-        $detail = self::drilldown( $request );
-        if ( is_wp_error( $detail ) ) { return $detail; }
-        $items = $detail->get_data()['items'];
+        if ( 'summary' === $kind ) {
+            $summary = self::summary( $request );
+            if ( is_wp_error( $summary ) ) { return $summary; }
+            $data = $summary->get_data();
+            $items = array();
+            foreach ( $data['kpis'] as $key => $value ) { $items[] = array( 'bölüm' => 'Finansal göstergeler', 'kalem' => $key, 'değer' => $value ); }
+            foreach ( $data['counts'] as $key => $value ) { $items[] = array( 'bölüm' => 'Operasyon göstergeleri', 'kalem' => $key, 'değer' => $value ); }
+            foreach ( $data['categories'] as $row ) { $items[] = array( 'bölüm' => 'Kategori', 'kalem' => $row['record_type'] . ' · ' . $row['category_name'], 'değer' => $row['amount'] ); }
+            foreach ( $data['trend'] as $row ) {
+                $items[] = array( 'bölüm' => 'Aylık trend', 'kalem' => $row['period'] . ' · gelir', 'değer' => $row['income'] );
+                $items[] = array( 'bölüm' => 'Aylık trend', 'kalem' => $row['period'] . ' · gider', 'değer' => $row['expense'] );
+            }
+        } else {
+            $detail = self::drilldown( $request );
+            if ( is_wp_error( $detail ) ) { return $detail; }
+            $items = $detail->get_data()['items'];
+        }
         if ( empty( $items ) ) {
             return new WP_REST_Response( array( 'filename' => 'surmeli-grup-rapor.csv', 'csv' => "\xEF\xBB\xBFVeri bulunamadı\r\n" ), 200 );
         }
