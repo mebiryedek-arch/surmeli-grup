@@ -198,10 +198,20 @@ final class SG_Reports {
         $customer_balances = array(); $supplier_balances = array();
         foreach ( $party_rows ?: array() as $party_row ) {
             $net = (float) $party_row['balance'];
-            if ( 'customer' === $party_row['party_type'] && $net > 0 ) {
-                $customer_balances[] = array( 'party_id' => (int) $party_row['id'], 'name' => $party_row['company_name'], 'balance' => self::money( $net ) );
-            } elseif ( 'supplier' === $party_row['party_type'] && $net < 0 ) {
-                $supplier_balances[] = array( 'party_id' => (int) $party_row['id'], 'name' => $party_row['company_name'], 'balance' => self::money( abs( $net ) ) );
+            if ( 'customer' === $party_row['party_type'] && abs( $net ) > 0.0001 ) {
+                $customer_balances[] = array(
+                    'party_id' => (int) $party_row['id'],
+                    'name' => $party_row['company_name'],
+                    'balance' => self::money( abs( $net ) ),
+                    'side' => $net > 0 ? 'Müşteri borçlu' : 'Müşteri alacaklı',
+                );
+            } elseif ( 'supplier' === $party_row['party_type'] && abs( $net ) > 0.0001 ) {
+                $supplier_balances[] = array(
+                    'party_id' => (int) $party_row['id'],
+                    'name' => $party_row['company_name'],
+                    'balance' => self::money( abs( $net ) ),
+                    'side' => $net < 0 ? 'Tedarikçiye borç' : 'Tedarikçiden alacak',
+                );
             }
         }
 
