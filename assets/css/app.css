@@ -259,3 +259,86 @@ html,body{margin:0;min-height:100%;background:var(--sg-bg)}body.sg-standalone-ap
 @keyframes sg-logo-float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.035)}}
 @keyframes sg-logo-turn{0%,75%,100%{rotate:0deg}85%{rotate:-8deg}95%{rotate:8deg}}
 @media(prefers-reduced-motion:reduce){.sg-loading-logo,.sg-loading-spinner{animation:none}}
+
+/* PWA action on the login screen */
+.sg-login-app-button{width:100%;min-height:46px;margin-top:12px;display:flex;align-items:center;justify-content:center;border:1px solid #cbd5e1;border-radius:9px;background:#f1f3f5;color:#334155;font:inherit;font-size:13px;font-weight:750;cursor:pointer;transition:background .15s,border-color .15s}
+.sg-login-app-button:hover,.sg-login-app-button:focus-visible{background:#e9edf1;border-color:#b8c3cf;outline:none}
+.sg-pwa-login-help{min-height:30px;margin:9px 0 0;text-align:center;color:#8491a1;font-size:11px;line-height:1.5}
+
+
+/* Premium Sürmeli Grup login experience */
+body.sg-standalone-app:has(.sg-login-page){background:#071426}
+.sg-login-page{position:relative;isolation:isolate;overflow:hidden;min-height:100svh;padding:clamp(24px,5vh,56px) 18px;background:radial-gradient(ellipse at 14% 18%,rgba(15,132,210,.34),transparent 34%),radial-gradient(ellipse at 86% 78%,rgba(242,119,38,.18),transparent 30%),radial-gradient(ellipse at 52% 110%,rgba(17,91,150,.38),transparent 46%),linear-gradient(135deg,#071426 0%,#0a2038 48%,#101b2c 100%);color:#eaf2fb}
+.sg-login-page:before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.22;background-image:linear-gradient(rgba(177,207,232,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(177,207,232,.12) 1px,transparent 1px);background-size:58px 58px;mask-image:linear-gradient(to bottom,black,transparent 92%)}
+.sg-login-page:after{content:"";position:absolute;z-index:-1;pointer-events:none;width:min(72vw,760px);aspect-ratio:1;right:-22%;top:-42%;border:1px solid rgba(148,190,224,.13);border-radius:50%;box-shadow:0 0 0 46px rgba(148,190,224,.025),0 0 0 92px rgba(148,190,224,.02),0 0 110px rgba(16,130,207,.12)}
+.sg-login-card{position:relative;width:min(100%,470px);padding:clamp(30px,5vw,48px) clamp(24px,5vw,46px) 34px;border:1px solid rgba(255,255,255,.72);border-radius:25px;background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(246,250,254,.96));box-shadow:0 34px 100px rgba(0,0,0,.38),0 8px 26px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.95);color:#17283b;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.sg-login-card:before{content:"";position:absolute;top:0;left:12%;right:12%;height:3px;border-radius:0 0 8px 8px;background:linear-gradient(90deg,transparent,#168bd0 24%,#f47721 76%,transparent)}
+.sg-login-logo{width:min(100%,238px);max-height:86px;margin:0 auto 28px;filter:drop-shadow(0 5px 12px rgba(14,45,72,.09))}
+.sg-login-eyebrow{margin-bottom:10px;color:#bd641f;font-size:9px;letter-spacing:2.2px}
+.sg-login-card h1{color:#10263d;font-size:30px;letter-spacing:-.8px;font-weight:800}
+.sg-login-description{margin:10px 0 25px;color:#6c7d90;font-size:13px;line-height:1.65}
+.sg-login-form{gap:9px}
+.sg-login-form>label:not(.sg-remember){margin-top:8px;color:#30465c;font-size:11px;font-weight:750;letter-spacing:.2px}
+.sg-login-form input[type=text],.sg-login-form input[type=password]{height:51px;padding:0 15px;border:1px solid #d7e1eb;border-radius:12px;background:#f8fafc;color:#17283b;font-size:14px;transition:border-color .2s,box-shadow .2s,background .2s}
+.sg-login-form input[type=text]:hover,.sg-login-form input[type=password]:hover{border-color:#a9c6dc}
+.sg-login-form input[type=text]:focus,.sg-login-form input[type=password]:focus{border-color:#1686c9;background:#fff;box-shadow:0 0 0 4px rgba(22,134,201,.12)}
+.sg-remember{margin:8px 0 12px;color:#65788b;font-size:12px}
+.sg-remember input{width:17px;height:17px;accent-color:#0878c9}
+.sg-login-form button,.sg-login-button-link{min-height:51px;border-radius:12px;background:linear-gradient(110deg,#0878c9,#075da5);box-shadow:0 9px 22px rgba(8,104,174,.24);font-size:13px;font-weight:800;letter-spacing:.15px;transition:transform .18s,box-shadow .18s,filter .18s}
+.sg-login-form button:hover,.sg-login-form button:focus-visible,.sg-login-button-link:hover{background:linear-gradient(110deg,#096db4,#064f8c);box-shadow:0 12px 26px rgba(8,104,174,.3);transform:translateY(-1px)}
+.sg-login-form button:focus-visible,.sg-login-app-button:focus-visible{outline:3px solid rgba(8,120,201,.25);outline-offset:3px}
+.sg-login-app-button{min-height:49px;margin-top:13px;border:1px solid #d3e0eb;border-radius:12px;background:#edf4f9;color:#24445f;font-size:12px;font-weight:800;transition:background .18s,border-color .18s,transform .18s}
+.sg-login-app-button:hover{background:#e3eff7;border-color:#a9c8df;transform:translateY(-1px)}
+.sg-pwa-login-help{min-height:31px;margin-top:9px;color:#8292a2;font-size:10px;line-height:1.55}
+.sg-login-error{border-radius:11px}
+.sg-login-footer{margin-top:22px;padding-top:17px;border-top:1px solid #e9eef3;color:#8b9aaa;font-size:10px;letter-spacing:.15px}
+.sg-login-copyright{position:relative;margin-top:19px;color:rgba(226,238,249,.58);font-size:10px;letter-spacing:.25px}
+@media(max-width:520px){.sg-login-page{justify-content:center;padding:24px 15px calc(24px + env(safe-area-inset-bottom))}.sg-login-card{padding:32px 23px 26px;border-radius:21px}.sg-login-logo{width:min(100%,210px);max-height:76px;margin-bottom:24px}.sg-login-card h1{font-size:26px}.sg-login-description{margin-bottom:21px}}
+@media(prefers-reduced-motion:reduce){.sg-login-form button,.sg-login-app-button{transition:none}.sg-login-form button:hover,.sg-login-app-button:hover{transform:none}}
+
+
+/* Branded 404 screen for invalid standalone application URLs */
+.sg-app-not-found,.sg-app-not-found *{box-sizing:border-box}
+.sg-app-not-found{min-height:100vh;padding:28px 18px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 16% 18%,rgba(8,120,201,.11),transparent 34%),radial-gradient(circle at 86% 82%,rgba(244,119,33,.10),transparent 30%),#f3f6fa;color:#1f2937}
+.sg-app-not-found-card{width:min(100%,560px);padding:46px 44px 34px;text-align:center;background:#fff;border:1px solid #e6ebf1;border-radius:20px;box-shadow:0 20px 60px rgba(22,45,72,.11)}
+.sg-app-not-found-logo{display:block;width:min(100%,230px);max-height:82px;object-fit:contain;margin:0 auto 24px}
+.sg-app-not-found-code{font-size:clamp(58px,13vw,88px);line-height:1;font-weight:850;letter-spacing:-5px;color:rgba(8,120,201,.13);margin:2px 0 12px}
+.sg-app-not-found-card .sg-login-eyebrow{margin-bottom:10px}
+.sg-app-not-found-card h1{margin:0;color:#18283a;font-size:clamp(23px,5vw,30px);letter-spacing:-.7px}
+.sg-app-not-found-description{max-width:410px;margin:13px auto 26px;color:#718096;font-size:14px;line-height:1.75}
+.sg-app-not-found-actions{display:flex;flex-direction:column;align-items:center;gap:15px}
+.sg-app-not-found-actions .sg-login-button-link{width:min(100%,280px);min-height:49px;display:flex;align-items:center;justify-content:center;gap:10px}
+.sg-app-not-found-home{color:#64748b;font-size:13px;font-weight:650;text-decoration:none}
+.sg-app-not-found-home:hover{color:var(--sg-blue);text-decoration:underline}
+.sg-app-not-found-brand{margin:0 0 20px;font-weight:800;letter-spacing:2px;color:#263648}
+@media(max-width:480px){.sg-app-not-found{padding:18px 14px}.sg-app-not-found-card{padding:36px 23px 27px;border-radius:16px}.sg-app-not-found-logo{width:min(100%,205px);margin-bottom:20px}.sg-app-not-found-description{font-size:13px}}
+
+
+/* 0.12.3 - clarify and visually separate optional app installation */
+.sg-login-app-install{margin-top:25px;padding-top:19px;border-top:1px solid #e8eef4;text-align:center}
+.sg-login-app-caption{margin:0 0 10px;color:#8796a5;font-size:9px;font-weight:800;letter-spacing:1.8px}
+.sg-login-app-button{width:100%;min-height:46px;margin:0;display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid #cbdbe8;border-radius:11px;background:#fff;color:#28506e;font:inherit;font-size:12px;font-weight:750;cursor:pointer;transition:background .18s,border-color .18s,transform .18s}
+.sg-login-app-button:before{content:"＋";font-size:16px;line-height:1;color:#0878c9}
+.sg-login-app-button:hover,.sg-login-app-button:focus-visible{background:#f3f8fc;border-color:#8fb6d2;transform:translateY(-1px);outline:none}
+.sg-pwa-login-help{min-height:0;margin:9px 0 0;color:#8492a1;font-size:10px;line-height:1.55}
+@media(max-width:520px){.sg-login-app-install{margin-top:21px;padding-top:17px}.sg-login-app-button{min-height:45px}}
+
+/* Customer type settings */
+.sg-settings-panel{max-width:900px}.sg-settings-panel .sg-panel-heading{align-items:flex-start}.sg-panel-subtitle{margin:6px 0 0;color:#718096;font-size:12px}.sg-customer-type-form{display:flex;align-items:flex-end;gap:12px;padding:15px 0;border-top:1px solid #edf0f4;border-bottom:1px solid #edf0f4}.sg-customer-type-form label{display:flex;flex:1;flex-direction:column;gap:6px;color:#64748b;font-size:11px;font-weight:650}.sg-customer-type-form input{width:100%;min-height:40px;padding:9px 11px;border:1px solid #dce4ec;border-radius:8px;font:inherit;font-size:12px}.sg-settings-message{min-height:18px;color:#64748b;font-size:11px}.sg-settings-panel .sg-customer-actions{gap:7px}
+@media(max-width:640px){.sg-customer-type-form{align-items:stretch;flex-direction:column}.sg-customer-type-form .sg-button{width:100%}}
+
+/* Turkish holiday calendar colors and monthly holiday legend */
+.sg-calendar-day.is-holiday-official{background:#fee2e2!important;border-color:#fca5a5!important}
+.sg-calendar-day.is-holiday-religious{background:#dcfce7!important;border-color:#86efac!important}
+.sg-calendar-day.is-task-day:not(.is-holiday-official):not(.is-holiday-religious){background:#fef3c7!important;border-color:#fcd34d!important}
+.sg-calendar-holiday-list{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:14px;padding-top:12px;border-top:1px solid var(--sg-border)}
+.sg-calendar-holiday-item{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:7px;font-size:11px;line-height:1.4}
+.sg-calendar-holiday-item strong{white-space:nowrap}
+.sg-calendar-holiday-item.is-official{background:#fee2e2;color:#991b1b}
+.sg-calendar-holiday-item.is-religious{background:#dcfce7;color:#166534}
+.sg-calendar-holiday-empty{margin:0;color:#94a3b8;font-size:11px}
+.sg-calendar-holiday-source{align-self:center;color:#94a3b8;font-size:10px}
+
+/* Login audit panel */
+.sg-login-history-panel{margin-top:16px}.sg-login-history-panel h2{margin:0 0 12px;font-size:16px}.sg-login-history-list{display:grid;gap:0}.sg-login-history-row{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-top:1px solid #edf0f4;font-size:11px}.sg-login-history-row strong{white-space:nowrap;color:#334155}.sg-login-history-row span{color:#64748b;text-align:right}
+@media(max-width:640px){.sg-login-history-row{flex-direction:column;gap:4px}.sg-login-history-row span{text-align:left}}
