@@ -98,7 +98,8 @@ final class SG_App {
         $security_css_version = file_exists( SG_PLUGIN_DIR . 'assets/css/account-security.css' ) ? (string) filemtime( SG_PLUGIN_DIR . 'assets/css/account-security.css' ) : SG_VERSION;
         $security_js_version  = file_exists( SG_PLUGIN_DIR . 'assets/js/account-security.js' ) ? (string) filemtime( SG_PLUGIN_DIR . 'assets/js/account-security.js' ) : SG_VERSION;
         $security_css_url = SG_PLUGIN_URL . 'assets/css/account-security.css?ver=' . rawurlencode( $security_css_version );
-        echo '<!doctype html><html lang="tr"><head><meta charset="' . esc_attr( get_bloginfo( 'charset' ) ) . '"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#0878C9"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Sürmeli Grup"><link rel="manifest" href="' . esc_url( add_query_arg( 'sg_pwa_manifest', '1', home_url( '/' ) ) ) . '"><link rel="apple-touch-icon" href="' . esc_url( $logo_url ) . '"><title>' . esc_html__( 'Sürmeli Grup İşletme Yönetimi', 'surmeli-grup' ) . '</title><link rel="stylesheet" href="' . esc_url( $css_url ) . '"><link rel="stylesheet" href="' . esc_url( $security_css_url ) . '"></head><body class="sg-standalone-app">';
+        $reports_css_url = SG_PLUGIN_URL . 'assets/css/reports.css?ver=' . rawurlencode( SG_VERSION );
+        echo '<!doctype html><html lang="tr"><head><meta charset="' . esc_attr( get_bloginfo( 'charset' ) ) . '"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#0878C9"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Sürmeli Grup"><link rel="manifest" href="' . esc_url( add_query_arg( 'sg_pwa_manifest', '1', home_url( '/' ) ) ) . '"><link rel="apple-touch-icon" href="' . esc_url( $logo_url ) . '"><title>' . esc_html__( 'Sürmeli Grup İşletme Yönetimi', 'surmeli-grup' ) . '</title><link rel="stylesheet" href="' . esc_url( $css_url ) . '"><link rel="stylesheet" href="' . esc_url( $security_css_url ) . '"><link rel="stylesheet" href="' . esc_url( $reports_css_url ) . '"></head><body class="sg-standalone-app">';
         if ( ! is_user_logged_in() ) {
             self::render_login( $login_error );
         } elseif ( ! SG_Permissions::current_user_can( 'app.access' ) ) {
@@ -124,6 +125,9 @@ final class SG_App {
                 'jobsEndpoint' => esc_url_raw( rest_url( 'sg/v1/jobs' ) ),
                 'jobOptionsEndpoint' => esc_url_raw( rest_url( 'sg/v1/job-options' ) ),
                 'personnelEndpoint' => esc_url_raw( rest_url( 'sg/v1/personnel' ) ),
+                'reportsEndpoint' => esc_url_raw( rest_url( 'sg/v1/reports' ) ),
+                'reportsDrilldownEndpoint' => esc_url_raw( rest_url( 'sg/v1/reports/drilldown' ) ),
+                'reportsExportEndpoint' => esc_url_raw( rest_url( 'sg/v1/reports/export' ) ),
             ) );
             echo '<script>window.SG_APP=' . wp_json_encode( array(
                 'version' => SG_VERSION,
@@ -147,6 +151,7 @@ final class SG_App {
             ) ) . ';</script>';
             require SG_PLUGIN_DIR . 'app/templates/app-shell.php';
             echo '<script src="' . esc_url( SG_PLUGIN_URL . 'assets/js/app.js?ver=' . SG_VERSION ) . '" defer></script>';
+            echo '<script src="' . esc_url( SG_PLUGIN_URL . 'assets/js/reports.js?ver=' . SG_VERSION ) . '" defer></script>';
             echo '<script src="' . esc_url( SG_PLUGIN_URL . 'assets/js/account-security.js?ver=' . rawurlencode( $security_js_version ) ) . '" defer></script>';
         }
         echo '<script>if ("serviceWorker" in navigator && location.protocol === "https:") { window.addEventListener("load", function () { navigator.serviceWorker.register(' . wp_json_encode( add_query_arg( 'sg_pwa_sw', '1', home_url( '/' ) ) ) . ', { scope: ' . wp_json_encode( SG_APP_URL ) . ' }).catch(function (error) { console.warn("Sürmeli Grup PWA kaydı başarısız:", error); }); }); }</script>';
