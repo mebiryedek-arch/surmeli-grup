@@ -119,10 +119,70 @@
     };
 
 
+
+    // Shared Turkish holiday data for both calendars. The WordPress endpoint caches
+    // provider responses for a day and retains the last successful copy on outages.
+    const holidayYears = new Map();
+    const loadHolidayYear = (year) => {
+        if (holidayYears.has(year)) return holidayYears.get(year);
+        const promise = fetch(SG_APP.restRoot + 'holidays/' + year, {
+            credentials: 'same-origin',
+            headers: { 'X-WP-Nonce': SG_APP.nonce, 'Accept': 'application/json' }
+        }).then((response) => {
+            if (!response.ok) throw new Error('Tatil takvimi alınamadı');
+            return response.json();
+        }).then((data) => Array.isArray(data.items) ? data.items : []).catch(() => []);
+        holidayYears.set(year, promise);
+        return promise;
+    };
+    const dateKey = (day) => [day.getFullYear(), String(day.getMonth()+1).padStart(2,'0'), String(day.getDate()).padStart(2,'0')].join('-');
+    const paintHolidayCalendar = (grid, list, date, tasks, taskDate) => {
+        const year = date.getFullYear(), month = date.getMonth();
+        loadHolidayYear(year).then((holidays) => {
+            const byDate = new Map(holidays.map((holiday) => [holiday.date, holiday]));
+            grid.querySelectorAll('.sg-calendar-day').forEach((cell) => {
+                const number = cell.querySelector('.sg-calendar-day-number');
+                if (!number) return;
+                const day = Number(number.textContent);
+                const muted = cell.classList.contains('is-muted');
+                // Grid order is Monday-first; reconstruct date from the visible first cell.
+                const first = new Date(year, month, 1);
+                const offset = (first.getDay()+6)%7;
+                const index = Array.from(grid.querySelectorAll('.sg-calendar-day')).indexOf(cell);
+                const actual = new Date(year, month, 1-offset+index);
+                const key = dateKey(actual);
+                const holiday = byDate.get(key);
+                cell.classList.remove('is-holiday-official','is-holiday-religious','is-task-day');
+                if (holiday) {
+                    cell.classList.add(holiday.type === 'religious' ? 'is-holiday-religious' : 'is-holiday-official');
+                    cell.title = holiday.name;
+                } else if (taskDate && taskDate(key)) {
+                    cell.classList.add('is-task-day');
+                }
+            });
+            if (list) {
+                list.replaceChildren();
+                const monthly = holidays.filter((holiday) => holiday.date.slice(0,7) === year+'-'+String(month+1).padStart(2,'0'));
+                if (!monthly.length) {
+                    const empty = document.createElement('p'); empty.className='sg-calendar-holiday-empty'; empty.textContent='Bu ay için kayıtlı resmî veya dinî tatil bulunmuyor.'; list.appendChild(empty);
+                } else {
+                    monthly.forEach((holiday) => {
+                        const item=document.createElement('div'); item.className='sg-calendar-holiday-item '+(holiday.type==='religious'?'is-religious':'is-official');
+                        const dateLabel=document.createElement('strong'); dateLabel.textContent=new Intl.DateTimeFormat('tr-TR',{day:'2-digit',month:'long'}).format(new Date(holiday.date+'T12:00:00'));
+                        const name=document.createElement('span'); name.textContent=holiday.name+(holiday.halfDay?' (Yarım gün)':'')+(holiday.tentative?' (Tahmini)':'');
+                        item.append(dateLabel,name); list.appendChild(item);
+                    });
+                }
+                const source=document.createElement('small'); source.className='sg-calendar-holiday-source'; source.textContent='Tatil verisi: OnlineTakvim'; list.appendChild(source);
+            }
+        });
+    };
+
     const setupDashboardCalendar = (permissions) => {
         const grid=root.querySelector('#sg-dashboard-calendar-grid');
         if(!grid||!permissions.has('jobs.view')||!SG_APP.jobsEndpoint)return;
         let date=new Date(), tasks=[];
+        const holidayList=root.querySelector('#sg-dashboard-holiday-list');
         const render=()=>{
             grid.replaceChildren();
             const y=date.getFullYear(),m=date.getMonth();
@@ -136,8 +196,10 @@
                 const cell=document.createElement('div');cell.className='sg-calendar-day'+(day.getMonth()!==m?' is-muted':'');
                 const n=document.createElement('span');n.className='sg-calendar-day-number';n.textContent=day.getDate();cell.appendChild(n);
                 tasks.filter(t=>String(t.due_date||'').slice(0,10)===key).slice(0,3).forEach(t=>{const b=document.createElement('button');b.type='button';b.className='sg-calendar-event';b.textContent=t.title;b.title=t.title;b.addEventListener('click',()=>{window.location.hash='jobs';});cell.appendChild(b);});
+                if(tasks.some(t=>String(t.due_date||'').slice(0,10)===key))cell.classList.add('is-task-day');
                 grid.appendChild(cell);
             }
+            paintHolidayCalendar(grid,holidayList,date,tasks,(key)=>tasks.some(t=>String(t.due_date||'').slice(0,10)===key));
         };
         const load=()=>apiRequest(SG_APP.jobsEndpoint).then(d=>{tasks=d.items||[];render();}).catch(()=>{grid.textContent='Görev takvimi şu anda yüklenemiyor.';});
         root.querySelector('#sg-dashboard-calendar-prev').addEventListener('click',()=>{date.setMonth(date.getMonth()-1);render();});
@@ -155,6 +217,8 @@
             if (section === 'income-expense' && !permissions.has('income_expense.view')) section = 'dashboard';
             if (section === 'personnel' && !permissions.has('personnel.view')) section = 'dashboard';
             if (section === 'jobs' && !permissions.has('jobs.view')) section = 'dashboard';
+            if (section === 'reports' && !permissions.has('reports.view')) section = 'dashboard';
+            if (section === 'settings' && !permissions.has('settings.manage')) section = 'dashboard';
             root.querySelectorAll('[data-section-view]').forEach((view) => { view.hidden = view.dataset.sectionView !== section; });
             root.querySelectorAll('.sg-sidebar [data-section]').forEach((link) => link.classList.toggle('is-active', link.dataset.section === section));
             const heading = root.querySelector('.sg-page-heading');
@@ -186,6 +250,17 @@
         const phoneField = root.querySelector('#sg-customer-phone');
         phoneField.addEventListener('input', () => { phoneField.value = formatTurkishPhone(phoneField.value); });
         editor.addEventListener('click', (event) => { if (event.target === editor) editor.close(); });
+        const kindSelect = root.querySelector('#sg-customer-kind');
+        let customerTypes = [];
+        const refreshCustomerTypes = (preserve = kindSelect.value) => apiRequest(SG_APP.restRoot + 'customer-types').then((data) => {
+            customerTypes = Array.isArray(data.items) ? data.items : [];
+            const selected = preserve;
+            kindSelect.replaceChildren();
+            const placeholder = document.createElement('option'); placeholder.value = ''; placeholder.textContent = customerTypes.length ? 'Tür seçin' : 'Önce Ayarlar bölümünden tür ekleyin'; kindSelect.appendChild(placeholder);
+            customerTypes.forEach((type) => { const option = document.createElement('option'); option.value = type.key; option.textContent = type.name; kindSelect.appendChild(option); });
+            if (selected && !customerTypes.some((type) => type.key === selected) && ['corporate','individual'].includes(selected)) { const option = document.createElement('option'); option.value = selected; option.textContent = selected === 'corporate' ? 'Eski tür: Kurumsal' : 'Eski tür: Bireysel'; kindSelect.appendChild(option); }
+            kindSelect.value = selected;
+        });
         const fields = {
             party_kind: 'sg-customer-kind', company_name: 'sg-customer-company', contact_name: 'sg-customer-contact',
             phone: 'sg-customer-phone', email: 'sg-customer-email', tax_office: 'sg-customer-tax-office',
@@ -215,7 +290,7 @@
                 });
             }).catch((error) => { customerRows.replaceChildren(); const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 7; td.className = 'sg-table-empty'; td.textContent = error.message; tr.appendChild(td); customerRows.appendChild(tr); });
         };
-        const openCustomer = (id, readOnly) => apiRequest(SG_APP.customersEndpoint + '/' + id).then((customer) => {
+        const openCustomer = (id, readOnly) => apiRequest(SG_APP.customersEndpoint + '/' + id).then((customer) => refreshCustomerTypes(customer.party_kind).then(() => customer)).then((customer) => {
             val('sg-customer-id').value = customer.id;
             Object.entries(fields).forEach(([key, fieldId]) => { val(fieldId).value = key === 'phone' && customer[key] ? formatTurkishPhone(customer[key]) : (customer[key] || (key === 'status' ? 'active' : '')); val(fieldId).disabled = readOnly; });
             val('sg-customer-editor-title').textContent = readOnly ? 'Müşteri Detayı' : 'Müşteri Düzenle';
@@ -224,7 +299,7 @@
             if (!editor.open) editor.showModal();
         }).catch((error) => { window.alert(error.message); });
         const resetEditor = () => {
-            form.reset(); val('sg-customer-id').value = ''; Object.values(fields).forEach((id) => { val(id).disabled = false; });
+            form.reset(); refreshCustomerTypes().catch(() => {}); val('sg-customer-id').value = ''; Object.values(fields).forEach((id) => { val(id).disabled = false; });
             val('sg-customer-editor-title').textContent = 'Yeni Müşteri'; val('sg-customer-save').hidden = false; message.textContent = ''; if (editor.open) editor.close();
         };
         if (permissions.has('customers.create')) root.querySelector('#sg-customer-add').addEventListener('click', () => { resetEditor(); if (!editor.open) editor.showModal(); });
@@ -241,9 +316,17 @@
                 window.setTimeout(resetEditor, 900);
             }).catch((error) => { message.textContent = error.message; }).finally(() => { val('sg-customer-save').disabled = false; });
         });
+        refreshCustomerTypes().catch(() => { message.textContent = 'Müşteri türleri yüklenemedi.'; });
         load();
     };
 
+    const setupCustomerTypeSettings = (permissions) => {
+        const rows = root.querySelector('#sg-customer-type-rows'); if (!rows || !permissions.has('settings.manage')) return;
+        const form = root.querySelector('#sg-customer-type-form'), input = root.querySelector('#sg-customer-type-name'), message = root.querySelector('#sg-customer-type-message'), save = root.querySelector('#sg-customer-type-save');
+        const endpoint = SG_APP.restRoot + 'customer-types'; let items = [];
+        const load = () => apiRequest(endpoint).then((data) => { items = Array.isArray(data.items) ? data.items : []; rows.replaceChildren(); if (!items.length) { const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=2;td.className='sg-table-empty';td.textContent='Henüz müşteri türü tanımlanmadı.';tr.appendChild(td);rows.appendChild(tr);return; } items.forEach((item) => { const tr=document.createElement('tr'),name=document.createElement('td'),actions=document.createElement('td');name.textContent=item.name;const edit=document.createElement('button');edit.type='button';edit.className='sg-button sg-button-small sg-button-light';edit.textContent='Düzenle';edit.addEventListener('click',()=>{const next=window.prompt('Müşteri türü adı',item.name);if(next===null)return;apiRequest(endpoint+'/'+encodeURIComponent(item.key),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:next})}).then(d=>{message.textContent=d.message;load();}).catch(e=>{message.textContent=e.message;});});const del=document.createElement('button');del.type='button';del.className='sg-button sg-button-small sg-button-light';del.textContent='Sil';del.addEventListener('click',()=>{if(!window.confirm('“'+item.name+'” türünü silmek istediğinizden emin misiniz?'))return;apiRequest(endpoint+'/'+encodeURIComponent(item.key),{method:'DELETE'}).then(d=>{message.textContent=d.message;load();}).catch(e=>{message.textContent=e.message;});});actions.className='sg-customer-actions';actions.append(edit,del);tr.append(name,actions);rows.appendChild(tr);}); }).catch(e=>{rows.replaceChildren();const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=2;td.className='sg-table-empty';td.textContent=e.message;tr.appendChild(td);rows.appendChild(tr);});
+        form.addEventListener('submit',(event)=>{event.preventDefault();save.disabled=true;apiRequest(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:input.value})}).then(d=>{message.textContent=d.message;input.value='';return load();}).catch(e=>{message.textContent=e.message;}).finally(()=>{save.disabled=false;});}); load();
+    };
 
     const setupSupplierModule = (permissions) => {
         if (!supplierRows || !SG_APP.suppliersEndpoint || !permissions.has('suppliers.view')) return;
@@ -553,6 +636,7 @@
 
         const renderCalendar = () => {
             const grid=field('sg-calendar-grid');grid.replaceChildren();
+            const holidayList=field('sg-job-holiday-list');
             const y=calendarDate.getFullYear(),m=calendarDate.getMonth();
             field('sg-calendar-title').textContent=new Intl.DateTimeFormat('tr-TR',{month:'long',year:'numeric'}).format(calendarDate);
             ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].forEach(d=>{const h=document.createElement('div');h.className='sg-calendar-weekday';h.textContent=d;grid.appendChild(h);});
@@ -563,8 +647,10 @@
                 const num=document.createElement('span');num.className='sg-calendar-day-number';num.textContent=day.getDate();cell.appendChild(num);
                 const key=[day.getFullYear(),String(day.getMonth()+1).padStart(2,'0'),String(day.getDate()).padStart(2,'0')].join('-');
                 items.filter(x=>safeDate(x.due_date)===key).slice(0,3).forEach(x=>{const b=document.createElement('button');b.type='button';b.className='sg-calendar-event sg-calendar-event-'+x.priority;b.textContent=x.title;b.title=x.title;b.addEventListener('click',()=>openJob(x.id));cell.appendChild(b);});
+                if(items.some(x=>safeDate(x.due_date)===key))cell.classList.add('is-task-day');
                 grid.appendChild(cell);
             }
+            paintHolidayCalendar(grid,holidayList,calendarDate,items,(key)=>items.some(x=>safeDate(x.due_date)===key));
         };
         const load = () => request(SG_APP.jobsEndpoint).then(d=>{items=d.items||[];renderMetrics();renderList();renderBoard();renderCalendar();}).catch(e=>{field('sg-job-rows').textContent=e.message;});
         const resetForm = () => {form.reset();field('sg-job-id').value='';field('sg-job-priority').value='normal';field('sg-job-status').value='new';field('sg-job-message').textContent='';};
@@ -759,6 +845,7 @@
             heading.hidden = !hasVisible;
         });
         setupNavigation(granted);
+        try { setupCustomerTypeSettings(granted); } catch (e) { console.error('Ayarlar modülü başlatılamadı:', e); }
         try { setupCustomerModule(granted); } catch (e) { console.error('Müşteri modülü başlatılamadı:', e); }
         try { setupSupplierModule(granted); } catch (e) { console.error('Tedarikçi modülü başlatılamadı:', e); }
         try { setupAccountsModule(granted); } catch (e) { console.error('Cari hesap modülü başlatılamadı:', e); }
