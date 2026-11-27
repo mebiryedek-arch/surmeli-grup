@@ -1,9 +1,10 @@
-name: Build installable Sürmeli Grup ZIP
+name: Build installable Sürmeli Grup 0.13.0 ZIP
 
 on:
   push:
     branches:
       - feature/is-takip-012
+      - fix/password-menu-click-20261125
   workflow_dispatch:
 
 jobs:
@@ -22,10 +23,11 @@ jobs:
       - name: Create installable ZIP
         run: |
           cd dist
-          zip -qr surmeli-grup-0.12.0.zip surmeli-grup
+          zip -qr surmeli-grup-0.13.0.zip surmeli-grup
+          unzip -t surmeli-grup-0.13.0.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: surmeli-grup-0.12.0-installable
-          path: dist/surmeli-grup-0.12.0.zip
+          name: surmeli-grup-0.13.0-installable
+          path: dist/surmeli-grup-0.13.0.zip
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30

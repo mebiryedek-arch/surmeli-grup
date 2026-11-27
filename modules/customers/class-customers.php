@@ -33,8 +33,12 @@ final class SG_Customers {
         if ( 10 === strlen( $phone ) && str_starts_with( $phone, '5' ) ) { $phone = '0' . $phone; }
         if ( '' !== $phone && ( 11 !== strlen( $phone ) || ! str_starts_with( $phone, '0' ) ) ) { return new WP_Error( 'sg_customer_phone', 'Telefon numarası 0 (555) 555 55 55 biçiminde olmalıdır.', array( 'status' => 400 ) ); }
         $kind = sanitize_key( (string) $r->get_param( 'party_kind' ) );
+        $valid_kinds = array_column( SG_Customer_Types::all(), 'key' );
+        $customer_id = absint( $r->get_param( 'id' ) );
+        $legacy_kind = in_array( $kind, array( 'corporate', 'individual' ), true ) && $customer_id > 0 && $kind === (string) $GLOBALS['wpdb']->get_var( $GLOBALS['wpdb']->prepare( "SELECT party_kind FROM " . self::table() . " WHERE id=%d AND party_type='customer'", $customer_id ) );
+        if ( ! in_array( $kind, $valid_kinds, true ) && ! $legacy_kind ) { return new WP_Error( 'sg_customer_kind', 'Lütfen Ayarlar bölümünden tanımlanmış bir müşteri türü seçin.', array( 'status' => 400 ) ); }
         return array(
-            'party_kind' => in_array( $kind, array( 'corporate', 'individual' ), true ) ? $kind : 'corporate',
+            'party_kind' => $kind,
             'company_name' => $name,
             'contact_name' => sanitize_text_field( (string) $r->get_param( 'contact_name' ) ),
             'phone' => $phone,
@@ -72,6 +76,7 @@ final class SG_Customers {
     }
     public static function update_customer( WP_REST_Request $r ): WP_REST_Response|WP_Error {
         global $wpdb; $id = absint( $r['id'] );
+        $r->set_param( 'id', $id );
         if ( ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM " . self::table() . " WHERE id=%d AND party_type='customer'", $id ) ) ) { return new WP_Error( 'sg_customer_missing', 'Müşteri kaydı bulunamadı.', array( 'status' => 404 ) ); }
         $data = self::payload( $r ); if ( is_wp_error( $data ) ) { return $data; }
         $duplicate = self::duplicate( $data, $id ); if ( $duplicate ) { return new WP_Error( 'sg_customer_duplicate', 'Bu telefon veya vergi numarası başka bir müşteri kaydında kullanılıyor: ' . $duplicate, array( 'status' => 409 ) ); }

@@ -28,7 +28,7 @@ final class SG_PWA {
     private static function manifest(): void {
         nocache_headers();
         header( 'Content-Type: application/manifest+json; charset=utf-8' );
-        $icon = SG_PLUGIN_URL . 'assets/images/surmeli-grup-logo.svg';
+        $icon = SG_PLUGIN_URL . 'assets/images/pwa-icon.svg';
         echo wp_json_encode( array(
             'id' => SG_APP_URL,
             'name' => 'Sürmeli Grup',
@@ -41,7 +41,7 @@ final class SG_PWA {
             'background_color' => '#F3F6FA',
             'theme_color' => '#0878C9',
             'icons' => array(
-                array( 'src' => $icon, 'sizes' => 'any', 'type' => 'image/svg+xml', 'purpose' => 'any' ),
+                array( 'src' => $icon, 'sizes' => '192x192 512x512', 'type' => 'image/svg+xml', 'purpose' => 'any maskable' ),
             ),
         ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
     }
@@ -54,6 +54,7 @@ final class SG_PWA {
             SG_PLUGIN_URL . 'assets/css/app.css',
             SG_PLUGIN_URL . 'assets/js/app.js',
             SG_PLUGIN_URL . 'assets/images/surmeli-grup-logo.svg',
+            SG_PLUGIN_URL . 'assets/images/pwa-icon.svg',
         );
         echo 'const CACHE = ' . wp_json_encode( 'sg-portal-pwa-' . SG_VERSION ) . ';' . "\n";
         echo 'const ASSETS = ' . wp_json_encode( $assets ) . ';' . "\n";
