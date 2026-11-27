@@ -297,14 +297,12 @@ final class SG_Reports {
         } elseif ( 'party' === $kind ) {
             $party_id = absint( $request->get_param( 'party_id' ) );
             if ( ! $party_id ) { return new WP_Error( 'sg_report_party', 'Cari hesap seçilmedi.', array( 'status' => 400 ) ); }
-            $sql = "SELECT j.id,j.entry_no,j.entry_date date,j.entry_type type,j.document_no,j.description,l.debit,l.credit,
-                    (SELECT SUM(l2.debit-l2.credit) FROM {$lines} l2 INNER JOIN {$je} j2 ON j2.id=l2.entry_id AND j2.status='posted'
-                     INNER JOIN {$accounts} a2 ON a2.id=l2.party_account_id WHERE a2.party_id=%d AND j2.entry_date <= j.entry_date) running_balance
+            $sql = "SELECT j.id,j.entry_no,j.entry_date date,j.entry_type type,j.document_no,j.description,l.debit,l.credit
                     FROM {$accounts} a INNER JOIN {$lines} l ON l.party_account_id=a.id
                     INNER JOIN {$je} j ON j.id=l.entry_id AND j.status='posted'
                     WHERE a.party_id=%d AND j.entry_date BETWEEN %s AND %s
                     ORDER BY j.entry_date,j.id,l.id LIMIT 2000";
-            $args = array( $party_id, $party_id, $from, $to );
+            $args = array( $party_id, $from, $to );
         } elseif ( 'jobs' === $kind || 'personnel' === $kind ) {
             $sql = "SELECT j.id,j.job_no,j.title,j.status,j.created_at date,j.due_date,j.completed_at,j.assigned_personnel_id,p.full_name assigned_name,
                     CASE WHEN j.completed_at IS NOT NULL THEN ROUND(TIMESTAMPDIFF(SECOND,j.created_at,j.completed_at)/86400,2) ELSE NULL END duration_days
@@ -322,6 +320,20 @@ final class SG_Reports {
             return new WP_Error( 'sg_report_kind', 'İstenen rapor detayı desteklenmiyor.', array( 'status' => 400 ) );
         }
         $rows = $wpdb->get_results( $wpdb->prepare( $sql, $args ), ARRAY_A );
+        if ( 'party' === $kind && ! empty( $rows ) ) {
+            $opening = self::scalar(
+                "SELECT COALESCE(SUM(l.debit-l.credit),0) FROM {$accounts} a
+                 INNER JOIN {$lines} l ON l.party_account_id=a.id
+                 INNER JOIN {$je} j ON j.id=l.entry_id AND j.status='posted'
+                 WHERE a.party_id=%d AND j.entry_date < %s",
+                array( absint( $request->get_param( 'party_id' ) ), $from )
+            );
+            foreach ( $rows as &$row ) {
+                $opening += (float) $row['debit'] - (float) $row['credit'];
+                $row['running_balance'] = self::money( $opening );
+            }
+            unset( $row );
+        }
         return new WP_REST_Response( array( 'kind' => $kind, 'period' => $dates, 'items' => $rows ?: array(), 'count' => count( $rows ?: array() ) ), 200 );
     }
 
